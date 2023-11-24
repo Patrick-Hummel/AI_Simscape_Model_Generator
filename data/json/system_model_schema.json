@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"type": "string"},
+          "parameters": {"type": "object"}
+        },
+        "required": ["id", "type", "parameters"]
+      }
+    },
+    "subsystems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "string"},
+                "type": {"type": "string"},
+                "parameters": {"type": "object"}
+              },
+              "required": ["id", "type", "parameters"]
+            }
+          },
+          "connections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {"type": "string"},
+                "to": {"type": "string"}
+              },
+              "required": ["from", "to"]
+            }
+          }
+        },
+        "required": ["id", "components", "connections"]
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"}
+        },
+        "required": ["from", "to"]
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "Solver": {"type": "string"},
+        "StopTime": {"type": "integer"}
+      },
+      "required": ["Solver", "StopTime"]
+    }
+  },
+  "required": ["name", "components", "subsystems", "connections", "parameters"]
+}

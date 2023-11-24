@@ -1,0 +1,234 @@
+{
+    "name": "SimpleMotorExample",
+    "components": [
+        {
+            "id": "Resistor_0",
+            "type": "Resistor",
+            "parameters": {
+                "R": 10.0
+            }
+        },
+        {
+            "id": "Solver_0",
+            "type": "Solver",
+            "parameters": {}
+        },
+        {
+            "id": "Reference_0",
+            "type": "Reference",
+            "parameters": {}
+        }
+    ],
+    "subsystems": [
+        {
+            "id": "VoltageSource_0",
+            "components": [
+                {
+                    "id": "VoltageSourceDC_0",
+                    "type": "VoltageSourceDC",
+                    "parameters": {
+                        "dc_voltage": 10.0
+                    }
+                },
+                {
+                    "id": "ConnectionPort_0",
+                    "type": "ConnectionPort",
+                    "parameters": {
+                        "Orientation": "left",
+                        "Side": "left",
+                        "_Port_Type": "Inport"
+                    }
+                },
+                {
+                    "id": "ConnectionPort_1",
+                    "type": "ConnectionPort",
+                    "parameters": {
+                        "Orientation": "right",
+                        "Side": "right",
+                        "_Port_Type": "Outport"
+                    }
+                }
+            ],
+            "connections": [
+                {
+                    "from": "VoltageSourceDC_0#LConn 1",
+                    "to": "ConnectionPort_0#RConn 1"
+                },
+                {
+                    "from": "VoltageSourceDC_0#RConn 1",
+                    "to": "ConnectionPort_1#RConn 1"
+                }
+            ]
+        },
+        {
+            "id": "MissionUniversalMotor_1",
+            "components": [
+                {
+                    "id": "VoltageSensor_0",
+                    "type": "VoltageSensor",
+                    "parameters": {}
+                },
+                {
+                    "id": "CurrentSensor_0",
+                    "type": "CurrentSensor",
+                    "parameters": {}
+                },
+                {
+                    "id": "Scope_0",
+                    "type": "Scope",
+                    "parameters": {}
+                },
+                {
+                    "id": "Scope_1",
+                    "type": "Scope",
+                    "parameters": {}
+                },
+                {
+                    "id": "PSSimuConv_0",
+                    "type": "PSSimuConv",
+                    "parameters": {}
+                },
+                {
+                    "id": "PSSimuConv_1",
+                    "type": "PSSimuConv",
+                    "parameters": {}
+                },
+                {
+                    "id": "ToWorkspace_0",
+                    "type": "ToWorkspace",
+                    "parameters": {
+                        "SampleTime": -1,
+                        "VariableName": "MissionUniversalMotor_0_simout_0",
+                        "SaveFormat": "Structure With Time"
+                    }
+                },
+                {
+                    "id": "ToWorkspace_1",
+                    "type": "ToWorkspace",
+                    "parameters": {
+                        "SampleTime": -1,
+                        "VariableName": "MissionUniversalMotor_0_simout_1",
+                        "SaveFormat": "Structure With Time"
+                    }
+                },
+                {
+                    "id": "UniversalMotor_0",
+                    "type": "UniversalMotor",
+                    "parameters": {
+                        "w_rated": 6500.0,
+                        "P_rated": 75.0,
+                        "V_dc": 200.0,
+                        "P_in": 160.0,
+                        "Ltot": 0.525
+                    }
+                },
+                {
+                    "id": "Inertia_0",
+                    "type": "Inertia",
+                    "parameters": {
+                        "inertia": 0.5,
+                        "num_ports": 2.0
+                    }
+                },
+                {
+                    "id": "ConnectionPort_2",
+                    "type": "ConnectionPort",
+                    "parameters": {
+                        "Orientation": "left",
+                        "Side": "left",
+                        "_Port_Type": "Inport"
+                    }
+                },
+                {
+                    "id": "ConnectionPort_3",
+                    "type": "ConnectionPort",
+                    "parameters": {
+                        "Orientation": "right",
+                        "Side": "right",
+                        "_Port_Type": "Outport"
+                    }
+                }
+            ],
+            "connections": [
+                {
+                    "from": "CurrentSensor_0#LConn 1",
+                    "to": "ConnectionPort_2#RConn 1"
+                },
+                {
+                    "from": "VoltageSensor_0#LConn 1",
+                    "to": "CurrentSensor_0#RConn 2"
+                },
+                {
+                    "from": "ConnectionPort_3#RConn 1",
+                    "to": "VoltageSensor_0#RConn 2"
+                },
+                {
+                    "from": "ConnectionPort_3#RConn 1",
+                    "to": "UniversalMotor_0#RConn 1"
+                },
+                {
+                    "from": "UniversalMotor_0#LConn 1",
+                    "to": "VoltageSensor_0#LConn 1"
+                },
+                {
+                    "from": "UniversalMotor_0#LConn 2",
+                    "to": "Inertia_0#LConn 1"
+                },
+                {
+                    "from": "Inertia_0#RConn 1",
+                    "to": "UniversalMotor_0#RConn 2"
+                },
+                {
+                    "from": "VoltageSensor_0#RConn 1",
+                    "to": "PSSimuConv_0#LConn 1"
+                },
+                {
+                    "from": "PSSimuConv_0#1",
+                    "to": "Scope_0#1"
+                },
+                {
+                    "from": "PSSimuConv_0#1",
+                    "to": "ToWorkspace_0#1"
+                },
+                {
+                    "from": "CurrentSensor_0#RConn 1",
+                    "to": "PSSimuConv_1#LConn 1"
+                },
+                {
+                    "from": "PSSimuConv_1#1",
+                    "to": "Scope_1#1"
+                },
+                {
+                    "from": "PSSimuConv_1#1",
+                    "to": "ToWorkspace_1#1"
+                }
+            ]
+        }
+    ],
+    "connections": [
+        {
+            "from": "VoltageSource_0#ConnectionPort_0",
+            "to": "Resistor_0#LConn 1"
+        },
+        {
+            "from": "Resistor_0#RConn 1",
+            "to": "MissionUniversalMotor_1#ConnectionPort_2"
+        },
+        {
+            "from": "MissionUniversalMotor_1#ConnectionPort_3",
+            "to": "VoltageSource_0#ConnectionPort_1"
+        },
+        {
+            "from": "VoltageSource_0#ConnectionPort_0",
+            "to": "Reference_0#LConn 1"
+        },
+        {
+            "from": "VoltageSource_0#ConnectionPort_0",
+            "to": "Solver_0#RConn 1"
+        }
+    ],
+    "parameters": {
+        "Solver": "ode23t",
+        "StopTime": 100
+    }
+}
