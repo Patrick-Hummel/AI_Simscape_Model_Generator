@@ -3,7 +3,7 @@
 """
 This class validates JSON files or JSON data in the form of dictionary objects based on a predefined JSON schema.
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "1"
@@ -13,17 +13,15 @@ import json
 from jsonschema import validate, ValidationError
 from pathlib import Path
 
-from config.gobal_constants import PATH_DEFAULT_JSON_SCHEMA_FILE
-
 
 class JSONSchemaValidator:
 
-    def __init__(self):
+    def __init__(self, json_schema_filepath: Path):
 
         try:
 
             # Convert Path to string before using json.loads
-            with open(str(PATH_DEFAULT_JSON_SCHEMA_FILE), 'r') as file:
+            with open(str(json_schema_filepath), 'r') as file:
                 self.json_schema = json.load(file)
 
         except json.JSONDecodeError as e:

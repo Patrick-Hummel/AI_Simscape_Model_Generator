@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "2"
@@ -19,8 +19,10 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 
 from config.gobal_constants import MATLAB_DEFAULT_SOLVER, MATLAB_DEFAULT_STOP_TIME, PATH_DEFAULT_SYSTEM_OUTPUT_JSON
-from src.model.components import Component, Signal, Port, Resistor, Varistor, Diode, Inductor, VariableInductor, \
-    Capacitor, VariableCapacitor
+from src.model.components import ComponentBlock, SignalBlock, PortBlock, ResistorBlock, VaristorBlock, DiodeBlock, \
+    InductorBlock, VariableInductorBlock, \
+    CapacitorBlock, VariableCapacitorBlock, ConnectionPortBlock, FromWorkspaceBlock, VoltageSensorBlock, \
+    CurrentSensorBlock, PSSimuConvBlock, ToWorkspaceBlock, ScopeBlock, SimuPSConvBlock
 
 
 class Connection:
@@ -52,8 +54,8 @@ class Connection:
 
 class Container:
 
-    def __init__(self, name: str, in_ports: List[Port] = None, out_ports: List[Port] = None,
-                 component_list: List[Component] = None, connection_list: List[Connection] = None):
+    def __init__(self, name: str, in_ports: List[PortBlock] = None, out_ports: List[PortBlock] = None,
+                 component_list: List[ComponentBlock] = None, connection_list: List[Connection] = None):
 
         self.name = name
 
@@ -88,10 +90,15 @@ class Container:
 
         for component in components:
 
-            if isinstance(component, Component):
+            if isinstance(component, ComponentBlock):
 
-                if isinstance(component, Port):
-                    self.in_ports.append(component)
+                if isinstance(component, ConnectionPortBlock):
+                    if component.port_type == "Inport":
+                        self.in_ports.append(component)
+                    elif component.port_type == "Outport":
+                        self.out_ports.append(component)
+                    else:
+                        raise ValueError(f"ComponentBlock {component} has no valid port_type attribute!")
 
                 # TODO ID based on system?
                 # name_count = sum(1 for c in self.component_list if c.name == component.name)
@@ -119,13 +126,41 @@ class Container:
     def list_connections(self):
         return [f"{connection.from_port} -> {connection.to_port}" for connection in self.connection_list]
 
+    def check_connections(self):
+
+        # TODO Remove this temporary workaround when the port refactor is complete
+
+        for connection in self.connection_list:
+
+            if "OUT" in connection.from_port:
+                connection.from_port = connection.from_port.replace("OUT", "")
+            elif "IN" in connection.from_port:
+                print(f"WARNING: FromPort {connection.from_port} is defined as an input port!")
+
+            if "IN" in connection.to_port:
+                connection.to_port = connection.to_port.replace("IN", "")
+            elif "OUT" in connection.to_port:
+                print(f"WARNING: ToPort {connection.to_port} is defined as an output port!")
+
+            connection.from_port = connection.from_port.replace("signal", "")
+            connection.to_port = connection.to_port.replace("signal", "")
+
+            connection.from_port = connection.from_port.replace("+", "")
+            connection.to_port = connection.to_port.replace("+", "")
+
+            connection.from_port = connection.from_port.replace("-", "")
+            connection.to_port = connection.to_port.replace("-", "")
+
+            connection.from_port = connection.from_port.replace("scope", "")
+            connection.to_port = connection.to_port.replace("scope", "")
+
 
 class Subsystem(Container):
 
     counter: int = 0
 
-    def __init__(self, name: str = "NewSubsystem", in_ports: List[Port] = None, out_ports: List[Port] = None,
-                 component_list: List[Component] = None, connection_list: List[Connection] = None):
+    def __init__(self, name: str = "NewSubsystem", in_ports: List[PortBlock] = None, out_ports: List[PortBlock] = None,
+                 component_list: List[ComponentBlock] = None, connection_list: List[Connection] = None):
 
         super().__init__(name, in_ports, out_ports, component_list, connection_list)
 
@@ -148,7 +183,7 @@ class Subsystem(Container):
         # Iterate through components
         for component in json_data.get("components", []):
 
-            implemented_component_types_dict = Component.get_implemented_component_types_dict()
+            implemented_component_types_dict = ComponentBlock.get_implemented_component_types_dict()
 
             if component["type"] in implemented_component_types_dict:
 
@@ -246,7 +281,7 @@ class Subsystem(Container):
         else:
             index_list = [i for i, instance in enumerate(self.component_list) if instance == signal[0]]
             found = False
-            for cls in Signal.__subclasses__():
+            for cls in SignalBlock.__subclasses__():
                 if cls().name == new_name:
                     new_signal = cls()
                     if len(new_signal.port) == len(signal[0].port):
@@ -284,10 +319,98 @@ class Subsystem(Container):
 
         return result
 
+    def add_sensor_between(self, first_comp, first_port: str, second_comp, second_port: str,
+                           sensor_type: str = "Voltage", include_scope: bool = True):
+        """
+        This method will add a VoltageSensor block or a CurrentSensor block between the specified components (and ports).
+        Additionally, a ToWorkspace block and PS-Simulink Converter block is added to turn the output signal of the
+        respective sensor into data that can be accesses via variable from the MATLAB workspace. A Scope block can
+        optionally be added for easy analysis in Simulink.
+
+        :param first_comp: The first component to which one end of the sensor is attached.
+        :param first_port: The electrical port of the first component.
+        :param second_comp: The second component to which the other end of the sensor is attached.
+        :param second_port: The electrical port of the second component.
+        :param sensor_type: Either 'Voltage' or 'Current'
+        :param include_scope: If true, a Scope block is added.
+        """
+
+        match sensor_type:
+            case "Voltage":
+                comp_sensor = VoltageSensorBlock()
+            case "Current":
+                comp_sensor = CurrentSensorBlock()
+            case _:
+                raise ValueError("The sensor_type must be 'Voltage' or 'Current'")
+
+        self.add_component(comp_sensor)
+
+        comp_ps_simu_conv = PSSimuConvBlock()
+        self.add_component(comp_ps_simu_conv)
+
+        workspace_variable_unique_name = f"Subsystem_{self.id}_{comp_sensor.unique_name}_simout_0"
+        comp_to_workspace = ToWorkspaceBlock(variable_name=workspace_variable_unique_name, sample_time=0)
+        self.add_component(comp_to_workspace)
+
+        # Signal from sensor to workspace and scope (optionally) via converter
+        conn_signal_1 = Connection(from_block=comp_ps_simu_conv, from_port=comp_ps_simu_conv.ports[1],
+                                   to_block=comp_to_workspace, to_port=comp_to_workspace.ports[0])
+        self.add_connection(conn_signal_1)
+
+        conn_signal_2 = Connection(from_block=comp_sensor, from_port=comp_sensor.ports[0],
+                                   to_block=comp_ps_simu_conv, to_port=comp_ps_simu_conv.ports[0])
+        self.add_connection(conn_signal_2)
+
+        # Attach a scope block if required
+        if include_scope:
+
+            comp_scope = ScopeBlock()
+            self.add_component(comp_scope)
+
+            conn_signal_3 = Connection(from_block=comp_ps_simu_conv, from_port=comp_ps_simu_conv.ports[1],
+                                       to_block=comp_scope, to_port=comp_scope.ports[0])
+            self.add_connection(conn_signal_3)
+
+        # Connect sensor to first and second component
+        conn_1 = Connection(from_block=comp_sensor, from_port=comp_sensor.ports[2],
+                            to_block=first_comp, to_port=first_port)
+
+        self.add_connection(conn_1)
+
+        conn_2 = Connection(from_block=comp_sensor, from_port=comp_sensor.ports[1],
+                            to_block=second_comp, to_port=second_port)
+
+        self.add_connection(conn_2)
+
+    def add_signal_from_workspace(self, component, signal_port: str):
+        """
+        This method adds a FromWorkspace block and a Simulink-PS Converter block to the subsystem and connects them.
+        The signal from the Simulink-PS Converter block is then connected to the specified component and port.
+
+        :param component: Component block to which a signal is to be added
+        :param signal_port: The signal input port of the specified component
+        """
+
+        comp_simu_ps_conv = SimuPSConvBlock()
+        self.add_component(comp_simu_ps_conv)
+
+        workspace_variable_unique_name = f"Subsystem_{self.id}_{component.unique_name}_simin_0"
+        comp_from_workspace = FromWorkspaceBlock(variable_name=workspace_variable_unique_name, sample_time=0)
+        self.add_component(comp_from_workspace)
+
+        # Signal connection to switch
+        conn_signal_1 = Connection(from_block=comp_simu_ps_conv, from_port=comp_simu_ps_conv.ports[1],
+                                   to_block=component, to_port=signal_port)
+        self.add_connection(conn_signal_1)
+
+        conn_signal_2 = Connection(from_block=comp_from_workspace, from_port=comp_from_workspace.ports[0],
+                                   to_block=comp_simu_ps_conv, to_port=comp_simu_ps_conv.ports[0])
+        self.add_connection(conn_signal_2)
+
 
 class System(Container):
-    def __init__(self, name: str = "NewSystem", in_ports: List[Port] = None, out_ports: List[Port] = None,
-                 component_list: List[Component] = None, connection_list: List[Connection] = None,
+    def __init__(self, name: str = "NewSystem", in_ports: List[PortBlock] = None, out_ports: List[PortBlock] = None,
+                 component_list: List[ComponentBlock] = None, connection_list: List[Connection] = None,
                  solver: str = MATLAB_DEFAULT_SOLVER, stop_time: int = MATLAB_DEFAULT_STOP_TIME):
 
         super().__init__(name, in_ports, out_ports, component_list, connection_list)
@@ -332,7 +455,7 @@ class System(Container):
         # Iterate through components
         for component in json_data.get("components", []):
 
-            implemented_component_types_dict = Component.get_implemented_component_types_dict()
+            implemented_component_types_dict = ComponentBlock.get_implemented_component_types_dict()
 
             if component["type"] in implemented_component_types_dict:
 
@@ -459,7 +582,7 @@ class System(Container):
             else:
                 index_list = [i for i, instance in enumerate(self.component_list) if instance == signal[0]]
                 found = False
-                for cls in Signal.__subclasses__():
+                for cls in SignalBlock.__subclasses__():
                     if cls().name == new_name:
                         new_signal = cls()
                         if len(new_signal.port) == len(signal[0].port):

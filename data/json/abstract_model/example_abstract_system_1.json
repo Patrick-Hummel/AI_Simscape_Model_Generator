@@ -1,0 +1,46 @@
+{
+  "components": [
+    {
+      "id": "SPSTSwitch_1",
+      "input_ports": [
+        {"id": "SPSTSwitch_1_R1"}
+      ],
+      "output_ports": [
+        {"id": "SPSTSwitch_1_L1"}
+      ]
+    },
+    {
+      "id": "SPSTSwitch_2",
+      "input_ports": [
+        {"id": "SPSTSwitch_2_R1"}
+      ],
+      "output_ports": [
+        {"id": "SPSTSwitch_2_L1"}
+      ]
+    },
+    {
+      "id": "Lamp_1",
+      "input_ports": [
+        {"id": "Lamp_1_R1"}
+      ],
+      "output_ports": [
+        {"id": "Lamp_1_L1"}
+      ]
+    },
+    {
+      "id": "Battery_1",
+      "input_ports": [
+        {"id": "Battery_1_R1"}
+      ],
+      "output_ports": [
+        {"id": "Battery_1_L1"}
+      ]
+    }
+  ],
+  "connections": [
+    {"from": "SPSTSwitch_1_L1", "to": "SPSTSwitch_2_R1"},
+    {"from": "SPSTSwitch_2_L1", "to": "Lamp_1_R1"},
+    {"from": "Lamp_1_L1", "to": "Battery_1_R1"},
+    {"from": "Battery_1_L1", "to": "SPSTSwitch_1_R1"}
+  ]
+}

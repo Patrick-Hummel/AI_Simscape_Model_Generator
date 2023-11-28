@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "2"
@@ -21,6 +21,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 from config.gobal_constants import PATH_DEFAULT_SIMSCAPE_MODEL_OUTPUT_SLX
+from src.model.components import FromWorkspaceBlock
 from src.model.system import System, Connection, Subsystem
 
 
@@ -181,9 +182,8 @@ class SystemSimulinkAdapter(SimulinkInterface):
                         eng.set_param(f'{subsystem_path}/{component.unique_name}',
                                       param_name, param_value_str, nargout=0)
 
-            if component.name == 'FromWorkspace':
+            if isinstance(component, FromWorkspaceBlock):
 
-                component.variable_name = f"simin_{component.id}_{subsystem.id}"
                 time_values = matlab.double([0])
                 data_values = matlab.double([[1]])
 
@@ -195,8 +195,8 @@ class SystemSimulinkAdapter(SimulinkInterface):
                 }
 
                 eng.workspace[component.variable_name] = eng.struct(my_signal)
-                eng.set_param(f'{subsystem_path}/{component.name}_{component.id}', 'VariableName',
-                              component.variable_name, nargout=0)
+                # eng.set_param(f'{subsystem_path}/{component.name}_{component.id}', 'VariableName',
+                #               component.variable_name, nargout=0)
 
         for connection in subsystem.connection_list:
             eng.add_line(subsystem_path, connection.from_port_path(), connection.to_port_path(), 'autorouting', 'on', nargout=0)

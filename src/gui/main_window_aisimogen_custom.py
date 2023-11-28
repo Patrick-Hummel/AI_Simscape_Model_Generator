@@ -3,7 +3,7 @@
 """
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "1"
@@ -13,9 +13,11 @@ import threading
 import locale
 
 from src import prompt_request_factory
+from src.language_model_enum import LLModel
+
 from src.gui.percentage_worker import PercentageWorker
 from src.gui.main_window_aisimogen_generated import Ui_MainWindow
-from config.gobal_constants import LLM_MODEL_OPENAI_GPT
+
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -50,7 +52,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         worker.percentage = 50
         worker.text = "Request sent..."
 
-        response_str = prompt_request_factory.request(prompt, LLM_MODEL_OPENAI_GPT)
+        response_str = prompt_request_factory.request(prompt, LLModel.OPENAI_GPT35_Turbo)
 
         worker.percentage = 100
         worker.text = "Response received!"

@@ -3,45 +3,66 @@
 """
 Main module of the AI Simscape Model Generator.
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "1"
 __author__ = "Patrick Hummel"
 
-import json
 from pathlib import Path
 from dotenv import load_dotenv
 
-from config.gobal_constants import PATH_DEFAULT_DATA_JSON
-from src.response_interpreter import ResponseInterpreter
+from config.gobal_constants import PATH_DEFAULT_RESPONSES_DIR
+from src.language_model_enum import LLModel
 
 # Load api-key as environment variable
 load_dotenv(Path(".env"))
 
+from src import prompt_request_factory
+from src.prompt_generator import PromptGenerator
+from src.response_interpreter import ResponseInterpreter
+from src.simscape.interface import Implementer, SystemSimulinkAdapter
+from src.system_builder import SystemBuilder
+
+# Temporary to reuse old responses
+SEND_NEW_REQUEST = False
+
 
 def main():
 
-    # PromptRequestFactory.request("Hello World! (1)", LLM_MODEL_OPENAI_GPT)
-    # PromptRequestFactory.request("Hello World! (2)", LLM_MODEL_OPENAI_GPT)
-    # PromptRequestFactory.request("Hello World! (3)", LLM_MODEL_OPENAI_GPT)
+    # 1) Generate prompt
+    prompt_generator = PromptGenerator()
+    prompt = prompt_generator.generate_prompt("Create a circuit with a battery, two lamps and two switches. "
+                                              "Each lamp may be controlled by one switch.")
 
-    example_json_path = PATH_DEFAULT_DATA_JSON / "system_simple_motor_example.json"
+    # 2) Send prompt to LLM and await response
+    if SEND_NEW_REQUEST:
 
+        print("Sending new request...")
+        response = prompt_request_factory.request(prompt, LLModel.OPENAI_GPT35_Turbo)
+
+    else:
+
+        print("Using a previous response...")
+        previous_response = PATH_DEFAULT_RESPONSES_DIR / "api_call_20231128_1523/response_20231128_1523.txt"
+
+        with open(previous_response, 'r') as file:
+            response: str = file.read()
+
+    # 3) Interpret response
     response_interpreter = ResponseInterpreter()
+    abstract_system = response_interpreter.interpret_response(response)
 
-    try:
+    # 4) Build detailed system
+    builder = SystemBuilder(abstract_system)
+    system = builder.build("Example")
+    # system.load_from_json_data()
+    system.save_as_json()
 
-        # Convert Path to string before using json.loads
-        with open(str(example_json_path), 'r') as file:
-            json_data = json.load(file)
-
-            # Interpret as if it were part of a LLM response
-            response_interpreter.interpret_json(json_data)
-
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON file: {e}")
-        exit(1)
+    # 5) Create simulink model and save result to disk
+    simulink_implementer = Implementer(SystemSimulinkAdapter)
+    simulink_implementer.input_to_simulink(system, system.name)
+    simulink_implementer.save_to_disk(system.name)
 
 
 if __name__ == '__main__':

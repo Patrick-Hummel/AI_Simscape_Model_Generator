@@ -8,7 +8,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 23.11.2023
+Last modification: 28.11.2023
 """
 
 __version__ = "2"
@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 from typing import Final, List, Type, Dict
 
 
-class Component(ABC):
+class ComponentBlock(ABC):
 
     @staticmethod
     def get_all_subclasses(cls) -> List[Type]:
@@ -94,12 +94,12 @@ class Component(ABC):
         return ports
 
 
-class Logic(Component, ABC):
+class LogicBlock(ComponentBlock, ABC):
     pass
 
 
 # Logic
-class Comparator(Logic):
+class ComparatorBlock(LogicBlock):
 
     DIRECTORY: Final[str] = "simulink/Quick Insert/Logic and Bit Operations/Equal"
     PORTS: Final[List[str]] = ['IN1', 'IN2', 'OUT1']
@@ -109,18 +109,18 @@ class Comparator(Logic):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Comparator.counter
-        Comparator.counter += 1
+        self.id = ComparatorBlock.counter
+        ComparatorBlock.counter += 1
         
         # Start with default list of ports
-        self.ports = Comparator.PORTS
+        self.ports = ComparatorBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class Voter(Logic):
+class VoterBlock(LogicBlock):
 
     DIRECTORY: Final[str] = "simulink/User-Defined Functions/MATLAB Function"
     PORTS: Final[List[str]] = ['IN1', 'OUT1']
@@ -130,11 +130,11 @@ class Voter(Logic):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Voter.counter
-        Voter.counter += 1
+        self.id = VoterBlock.counter
+        VoterBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Voter.PORTS
+        self.ports = VoterBlock.PORTS
 
     @property
     def parameter(self) -> dict:
@@ -148,7 +148,7 @@ class Voter(Logic):
         return {'Function': function}
 
 
-class Sparing(Logic):
+class SparingBlock(LogicBlock):
 
     DIRECTORY: Final[str] = "simulink/User-Defined Functions/MATLAB Function"
     PORTS: Final[List[str]] = ['IN1', 'IN2', 'OUT1']
@@ -158,11 +158,11 @@ class Sparing(Logic):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Sparing.counter
-        Sparing.counter += 1
+        self.id = SparingBlock.counter
+        SparingBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Sparing.PORTS
+        self.ports = SparingBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -195,7 +195,7 @@ class Sparing(Logic):
         return {'Function': function, "_n_count": self.n}
 
 
-class SignalAlter(Logic):
+class SignalAlterBlock(LogicBlock):
 
     DIRECTORY: Final[str] = "simulink/User-Defined Functions/MATLAB Function"
     PORTS: Final[List[str]] = ['IN1', 'OUT1']
@@ -205,11 +205,11 @@ class SignalAlter(Logic):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = SignalAlter.counter
-        SignalAlter.counter += 1
+        self.id = SignalAlterBlock.counter
+        SignalAlterBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = SignalAlter.PORTS
+        self.ports = SignalAlterBlock.PORTS
 
     @property
     def parameter(self) -> dict:
@@ -223,11 +223,11 @@ class SignalAlter(Logic):
 
 
 # Workspace
-class Workspace(Component, ABC):
+class WorkspaceBlock(ComponentBlock, ABC):
     pass
 
 
-class FromWorkspace(Workspace):
+class FromWorkspaceBlock(WorkspaceBlock):
 
     DIRECTORY: Final[str] = "simulink/Sources/From Workspace"
     PORTS: Final[List[str]] = ['OUT1']
@@ -237,11 +237,11 @@ class FromWorkspace(Workspace):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = FromWorkspace.counter
-        FromWorkspace.counter += 1
+        self.id = FromWorkspaceBlock.counter
+        FromWorkspaceBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = FromWorkspace.PORTS
+        self.ports = FromWorkspaceBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -256,7 +256,7 @@ class FromWorkspace(Workspace):
         return {'SampleTime': self.sample_time, 'VariableName': self.variable_name}
 
 
-class ToWorkspace(Workspace):
+class ToWorkspaceBlock(WorkspaceBlock):
 
     DIRECTORY: Final[str] = "simulink/Sinks/To Workspace"
     PORTS: Final[List[str]] = ['IN1']
@@ -266,11 +266,11 @@ class ToWorkspace(Workspace):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = ToWorkspace.counter
-        ToWorkspace.counter += 1
+        self.id = ToWorkspaceBlock.counter
+        ToWorkspaceBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = ToWorkspace.PORTS
+        self.ports = ToWorkspaceBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -288,11 +288,11 @@ class ToWorkspace(Workspace):
 
 
 # Port
-class Port(Component, ABC):
+class PortBlock(ComponentBlock, ABC):
     pass
 
 
-class Inport(Port):
+class InportBlock(PortBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/In1"
     PORTS: Final[List[str]] = ['IN1']
@@ -302,18 +302,18 @@ class Inport(Port):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Inport.counter
-        Inport.counter += 1
+        self.id = InportBlock.counter
+        InportBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Inport.PORTS
+        self.ports = InportBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class Outport(Port):
+class OutportBlock(PortBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Out1"
     PORTS: Final[List[str]] = ['OUT1']
@@ -323,18 +323,18 @@ class Outport(Port):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Outport.counter
-        Outport.counter += 1
+        self.id = OutportBlock.counter
+        OutportBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Outport.PORTS
+        self.ports = OutportBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class ConnectionPort(Port):
+class ConnectionPortBlock(PortBlock):
 
     DIRECTORY: Final[str] = "nesl_utility/Connection Port"
     PORTS: Final[List[str]] = ['RConn 1']
@@ -344,11 +344,11 @@ class ConnectionPort(Port):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = ConnectionPort.counter
-        ConnectionPort.counter += 1
+        self.id = ConnectionPortBlock.counter
+        ConnectionPortBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = ConnectionPort.PORTS
+        self.ports = ConnectionPortBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -364,11 +364,11 @@ class ConnectionPort(Port):
 
 
 # Utilities
-class Utilities(Component, ABC):
+class UtilitiesBlock(ComponentBlock, ABC):
     pass
 
 
-class Solver(Utilities):
+class SolverBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "nesl_utility/Solver Configuration"
     PORTS: Final[List[str]] = ['RConn 1']
@@ -378,18 +378,18 @@ class Solver(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Solver.counter
-        Solver.counter += 1
+        self.id = SolverBlock.counter
+        SolverBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Solver.PORTS
+        self.ports = SolverBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class PSSimuConv(Utilities):
+class PSSimuConvBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "nesl_utility/PS-Simulink Converter"
     PORTS: Final[List[str]] = ['INLConn 1', 'OUT1']
@@ -399,18 +399,18 @@ class PSSimuConv(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = PSSimuConv.counter
-        PSSimuConv.counter += 1
+        self.id = PSSimuConvBlock.counter
+        PSSimuConvBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = PSSimuConv.PORTS
+        self.ports = PSSimuConvBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class SimuPSConv(Utilities):
+class SimuPSConvBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "nesl_utility/Simulink-PS Converter"
     PORTS: Final[List[str]] = ['IN1', 'OUTRConn 1']
@@ -420,11 +420,11 @@ class SimuPSConv(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = SimuPSConv.counter
-        SimuPSConv.counter += 1
+        self.id = SimuPSConvBlock.counter
+        SimuPSConvBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = SimuPSConv.PORTS
+        self.ports = SimuPSConvBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -437,7 +437,7 @@ class SimuPSConv(Utilities):
         return {'FilteringAndDerivatives': self.filter_str}
 
 
-class Scope(Utilities):
+class ScopeBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Scope"
     PORTS: Final[List[str]] = ['IN1']
@@ -447,18 +447,18 @@ class Scope(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Scope.counter
-        Scope.counter += 1
+        self.id = ScopeBlock.counter
+        ScopeBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Scope.PORTS
+        self.ports = ScopeBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class Reference(Utilities):
+class ReferenceBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Connectors & References/Electrical Reference"
     PORTS: Final[List[str]] = ['LConn 1']
@@ -468,18 +468,18 @@ class Reference(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Reference.counter
-        Reference.counter += 1
+        self.id = ReferenceBlock.counter
+        ReferenceBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Reference.PORTS
+        self.ports = ReferenceBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class Mux(Utilities):
+class MuxBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Mux"
     PORTS: Final[List[str]] = []
@@ -489,11 +489,11 @@ class Mux(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Mux.counter
-        Mux.counter += 1
+        self.id = MuxBlock.counter
+        MuxBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Mux.PORTS
+        self.ports = MuxBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -521,7 +521,7 @@ class Mux(Utilities):
         return {'Inputs': self.num_input}
 
 
-class Demux(Utilities):
+class DemuxBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Demux"
     PORTS: Final[List[str]] = ['IN1']
@@ -531,11 +531,11 @@ class Demux(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Demux.counter
-        Demux.counter += 1
+        self.id = DemuxBlock.counter
+        DemuxBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Demux.PORTS
+        self.ports = DemuxBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -560,7 +560,7 @@ class Demux(Utilities):
         return {'Outputs': self.num_output}
 
 
-class VectorConcatenate(Utilities):
+class VectorConcatenateBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Vector Concatenate"
     PORTS: Final[List[str]] = []
@@ -570,11 +570,11 @@ class VectorConcatenate(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VectorConcatenate.counter
-        VectorConcatenate.counter += 1
+        self.id = VectorConcatenateBlock.counter
+        VectorConcatenateBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VectorConcatenate.PORTS
+        self.ports = VectorConcatenateBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -602,7 +602,7 @@ class VectorConcatenate(Utilities):
         return {'NumInputs': self.num_input}
 
 
-class CommonSwitch(Utilities):
+class CommonSwitchBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Commonly Used Blocks/Switch"
     PORTS: Final[List[str]] = ['IN1', 'IN2', 'IN3', 'OUT1']
@@ -612,11 +612,11 @@ class CommonSwitch(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = CommonSwitch.counter
-        CommonSwitch.counter += 1
+        self.id = CommonSwitchBlock.counter
+        CommonSwitchBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = CommonSwitch.PORTS
+        self.ports = CommonSwitchBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -629,7 +629,7 @@ class CommonSwitch(Utilities):
         return {'Threshold': self.threshold}
 
 
-class UnitDelay(Utilities):
+class UnitDelayBlock(UtilitiesBlock):
 
     DIRECTORY: Final[str] = "simulink/Discrete/Unit Delay"
     PORTS: Final[List[str]] = ['IN1', 'OUT1']
@@ -639,11 +639,11 @@ class UnitDelay(Utilities):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = UnitDelay.counter
-        UnitDelay.counter += 1
+        self.id = UnitDelayBlock.counter
+        UnitDelayBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = UnitDelay.PORTS
+        self.ports = UnitDelayBlock.PORTS
 
     @property
     def parameter(self) -> dict:
@@ -651,11 +651,11 @@ class UnitDelay(Utilities):
 
 
 # Signal
-class Signal(Component, ABC):
+class SignalBlock(ComponentBlock, ABC):
     pass
 
 
-class Constant(Signal):
+class ConstantBlock(SignalBlock):
 
     DIRECTORY: Final[str] = "simulink/Sources/Constant"
     PORTS: Final[List[str]] = ['OUT1']
@@ -665,11 +665,11 @@ class Constant(Signal):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Constant.counter
-        Constant.counter += 1
+        self.id = ConstantBlock.counter
+        ConstantBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Constant.PORTS
+        self.ports = ConstantBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -682,7 +682,7 @@ class Constant(Signal):
         return {'Value': self.value}
 
 
-class Step(Signal):
+class StepBlock(SignalBlock):
 
     DIRECTORY: Final[str] = "simulink/Sources/Step"
     PORTS: Final[List[str]] = ['OUT1']
@@ -692,11 +692,11 @@ class Step(Signal):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Step.counter
-        Step.counter += 1
+        self.id = StepBlock.counter
+        StepBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Step.PORTS
+        self.ports = StepBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -715,7 +715,7 @@ class Step(Signal):
         return {'Time': self.step_time, 'Before': self.initial_value, 'After': self.final_value, 'SampleTime': self.sample_time}
 
 
-class Sine(Signal):
+class SineBlock(SignalBlock):
 
     DIRECTORY: Final[str] = "simulink/Sources/Sine Wave"
     PORTS: Final[List[str]] = ['OUT1']
@@ -725,11 +725,11 @@ class Sine(Signal):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Sine.counter
-        Sine.counter += 1
+        self.id = SineBlock.counter
+        SineBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Sine.PORTS
+        self.ports = SineBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -752,15 +752,15 @@ class Sine(Signal):
 
 
 # Actuator
-class Actuator(Component, ABC):
+class ActuatorBlock(ComponentBlock, ABC):
     pass
 
 
-class ElectricalActuator(Actuator, ABC):
+class ElectricalActuatorBlock(ActuatorBlock, ABC):
     pass
 
 
-class CircuitBreaker(ElectricalActuator):
+class CircuitBreakerBlock(ElectricalActuatorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Switches & Breakers/Circuit Breaker"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2', 'RConn 1']
@@ -770,11 +770,11 @@ class CircuitBreaker(ElectricalActuator):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = CircuitBreaker.counter
-        CircuitBreaker.counter += 1
+        self.id = CircuitBreakerBlock.counter
+        CircuitBreakerBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = CircuitBreaker.PORTS
+        self.ports = CircuitBreakerBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -789,7 +789,7 @@ class CircuitBreaker(ElectricalActuator):
         return {'threshold': self.threshold, 'breaker_behavior': self.breaker_behavior}
 
 
-class SPSTSwitch(ElectricalActuator):
+class SPSTSwitchBlock(ElectricalActuatorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Switches & Breakers/SPST Switch"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2', 'RConn 1']
@@ -799,11 +799,11 @@ class SPSTSwitch(ElectricalActuator):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = SPSTSwitch.counter
-        SPSTSwitch.counter += 1
+        self.id = SPSTSwitchBlock.counter
+        SPSTSwitchBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = SPSTSwitch.PORTS
+        self.ports = SPSTSwitchBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -816,7 +816,7 @@ class SPSTSwitch(ElectricalActuator):
         return {'Threshold': self.threshold}
 
 
-class SPDTSwitch(ElectricalActuator):
+class SPDTSwitchBlock(ElectricalActuatorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Switches & Breakers/SPDT Switch"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2', 'RConn 1', 'RConn 2']
@@ -826,11 +826,11 @@ class SPDTSwitch(ElectricalActuator):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = SPDTSwitch.counter
-        SPDTSwitch.counter += 1
+        self.id = SPDTSwitchBlock.counter
+        SPDTSwitchBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = SPDTSwitch.PORTS
+        self.ports = SPDTSwitchBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -843,7 +843,7 @@ class SPDTSwitch(ElectricalActuator):
         return {'Threshold': self.threshold}
 
 
-class SPMTSwitch(ElectricalActuator):
+class SPMTSwitchBlock(ElectricalActuatorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Switches & Breakers/SPMT Switch"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2']
@@ -853,11 +853,11 @@ class SPMTSwitch(ElectricalActuator):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = SPMTSwitch.counter
-        SPMTSwitch.counter += 1
+        self.id = SPMTSwitchBlock.counter
+        SPMTSwitchBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = SPMTSwitch.PORTS
+        self.ports = SPMTSwitchBlock.PORTS
 
         # Prefer values from parameters dictionary
         if not isinstance(parameters, type(None)):
@@ -885,15 +885,15 @@ class SPMTSwitch(ElectricalActuator):
 
 
 # Sensor
-class Sensor(Component, ABC):
+class SensorBlock(ComponentBlock, ABC):
     pass
 
 
-class ElectricalSensor(Sensor, ABC):
+class ElectricalSensorBlock(SensorBlock, ABC):
     pass
 
 
-class CurrentSensor(ElectricalSensor):
+class CurrentSensorBlock(ElectricalSensorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sensors & Transducers/Current Sensor"
     PORTS: Final[List[str]] = ['scopeOUTRConn 1', '+LConn 1', '-RConn 2']
@@ -903,18 +903,18 @@ class CurrentSensor(ElectricalSensor):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = CurrentSensor.counter
-        CurrentSensor.counter += 1
+        self.id = CurrentSensorBlock.counter
+        CurrentSensorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = CurrentSensor.PORTS
+        self.ports = CurrentSensorBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class VoltageSensor(ElectricalSensor):
+class VoltageSensorBlock(ElectricalSensorBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sensors & Transducers/Voltage Sensor"
     PORTS: Final[List[str]] = ['scopeOUTRConn 1', '+LConn 1', '-RConn 2']
@@ -924,11 +924,11 @@ class VoltageSensor(ElectricalSensor):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VoltageSensor.counter
-        VoltageSensor.counter += 1
+        self.id = VoltageSensorBlock.counter
+        VoltageSensorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VoltageSensor.PORTS
+        self.ports = VoltageSensorBlock.PORTS
 
     @property
     def parameter(self) -> dict:
@@ -936,15 +936,15 @@ class VoltageSensor(ElectricalSensor):
 
 
 # Source
-class Source(Component, ABC):
+class SourceBlock(ComponentBlock, ABC):
     pass
 
 
-class ElectricalSource(Source, ABC):
+class ElectricalSourceBlock(SourceBlock, ABC):
     pass
 
 
-class Battery(ElectricalSource):
+class BatteryBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sources/Battery"
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -954,11 +954,11 @@ class Battery(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Battery.counter
-        Battery.counter += 1
+        self.id = BatteryBlock.counter
+        BatteryBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Battery.PORTS
+        self.ports = BatteryBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1000,7 +1000,7 @@ class Battery(ElectricalSource):
         return parameters
 
 
-class VoltageSourceAC(ElectricalSource):
+class VoltageSourceACBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sources/Voltage Source"
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -1010,11 +1010,11 @@ class VoltageSourceAC(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VoltageSourceAC.counter
-        VoltageSourceAC.counter += 1
+        self.id = VoltageSourceACBlock.counter
+        VoltageSourceACBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VoltageSourceAC.PORTS
+        self.ports = VoltageSourceACBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1034,7 +1034,7 @@ class VoltageSourceAC(ElectricalSource):
                 'ac_shift': self.phase_shift, 'ac_frequency': self.frequency}
 
 
-class CurrentSourceAC(ElectricalSource):
+class CurrentSourceACBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sources/Current Source"
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -1044,11 +1044,11 @@ class CurrentSourceAC(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = CurrentSourceAC.counter
-        CurrentSourceAC.counter += 1
+        self.id = CurrentSourceACBlock.counter
+        CurrentSourceACBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = CurrentSourceAC.PORTS
+        self.ports = CurrentSourceACBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1068,7 +1068,7 @@ class CurrentSourceAC(ElectricalSource):
                 'ac_shift': self.phase_shift, 'ac_frequency': self.frequency}
 
 
-class VoltageSourceDC(ElectricalSource):
+class VoltageSourceDCBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sources/Voltage Source"
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -1078,11 +1078,11 @@ class VoltageSourceDC(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VoltageSourceDC.counter
-        VoltageSourceDC.counter += 1
+        self.id = VoltageSourceDCBlock.counter
+        VoltageSourceDCBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VoltageSourceDC.PORTS
+        self.ports = VoltageSourceDCBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1095,7 +1095,7 @@ class VoltageSourceDC(ElectricalSource):
         return {'dc_voltage': self.voltage}
 
 
-class ControlledVoltageSource(ElectricalSource):
+class ControlledVoltageSourceBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "fl_lib/Electrical/Electrical Sources/Controlled Voltage Source"
     PORTS: Final[List[str]] = ['signalINRConn 1', '+LConn 1', '-RConn 2']
@@ -1105,18 +1105,18 @@ class ControlledVoltageSource(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = ControlledVoltageSource.counter
-        ControlledVoltageSource.counter += 1
+        self.id = ControlledVoltageSourceBlock.counter
+        ControlledVoltageSourceBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = ControlledVoltageSource.PORTS
+        self.ports = ControlledVoltageSourceBlock.PORTS
 
     @property
     def parameter(self) -> dict:
         return {}
 
 
-class CurrentSourceDC(ElectricalSource):
+class CurrentSourceDCBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Sources/Current Source"
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -1126,11 +1126,11 @@ class CurrentSourceDC(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = CurrentSourceDC.counter
-        CurrentSourceDC.counter += 1
+        self.id = CurrentSourceDCBlock.counter
+        CurrentSourceDCBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = CurrentSourceDC.PORTS
+        self.ports = CurrentSourceDCBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1143,7 +1143,7 @@ class CurrentSourceDC(ElectricalSource):
         return {'dc_current': self.current}
 
 
-class ControlledCurrentSource(ElectricalSource):
+class ControlledCurrentSourceBlock(ElectricalSourceBlock):
 
     DIRECTORY: Final[str] = "fl_lib/Electrical/Electrical Sources/Controlled Current Source"
     PORTS: Final[List[str]] = ['signalINRConn 1', '+LConn 1', '-RConn 2']
@@ -1153,11 +1153,11 @@ class ControlledCurrentSource(ElectricalSource):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = ControlledCurrentSource.counter
-        ControlledCurrentSource.counter += 1
+        self.id = ControlledCurrentSourceBlock.counter
+        ControlledCurrentSourceBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = ControlledCurrentSource.PORTS
+        self.ports = ControlledCurrentSourceBlock.PORTS
 
     @property
     def parameter(self) -> dict:
@@ -1165,15 +1165,15 @@ class ControlledCurrentSource(ElectricalSource):
 
 
 # Element
-class Element(Component, ABC):
+class ElementBlock(ComponentBlock, ABC):
     pass
 
 
-class ElectricalElement(Element, ABC):
+class ElectricalElementBlock(ElementBlock, ABC):
     pass
 
 
-class Capacitor(ElectricalElement):
+class CapacitorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Passive/Capacitor"
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1183,11 +1183,11 @@ class Capacitor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Capacitor.counter
-        Capacitor.counter += 1
+        self.id = CapacitorBlock.counter
+        CapacitorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Capacitor.PORTS
+        self.ports = CapacitorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1200,7 +1200,7 @@ class Capacitor(ElectricalElement):
         return {'c': self.capacitance}
 
 
-class VariableCapacitor(ElectricalElement):
+class VariableCapacitorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Passive/Variable Capacitor"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2', 'RConn 1']
@@ -1210,11 +1210,11 @@ class VariableCapacitor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VariableCapacitor.counter
-        VariableCapacitor.counter += 1
+        self.id = VariableCapacitorBlock.counter
+        VariableCapacitorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VariableCapacitor.PORTS
+        self.ports = VariableCapacitorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1227,7 +1227,7 @@ class VariableCapacitor(ElectricalElement):
         return {'Cmin': self.Cmin}
 
 
-class Inductor(ElectricalElement):
+class InductorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Passive/Inductor"
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1237,11 +1237,11 @@ class Inductor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Inductor.counter
-        Inductor.counter += 1
+        self.id = InductorBlock.counter
+        InductorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Inductor.PORTS
+        self.ports = InductorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1254,7 +1254,7 @@ class Inductor(ElectricalElement):
         return {'L': self.inductance}
 
 
-class VariableInductor(ElectricalElement):
+class VariableInductorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Passive/Variable Inductor"
     PORTS: Final[List[str]] = ['signalINLConn 1', 'LConn 2', 'RConn 1']
@@ -1264,11 +1264,11 @@ class VariableInductor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = VariableInductor.counter
-        VariableInductor.counter += 1
+        self.id = VariableInductorBlock.counter
+        VariableInductorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = VariableInductor.PORTS
+        self.ports = VariableInductorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1281,7 +1281,7 @@ class VariableInductor(ElectricalElement):
         return {'Lmin': self.Lmin}
 
 
-class Resistor(ElectricalElement):
+class ResistorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = "ee_lib/Passive/Resistor"
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1291,11 +1291,11 @@ class Resistor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Resistor.counter
-        Resistor.counter += 1
+        self.id = ResistorBlock.counter
+        ResistorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Resistor.PORTS
+        self.ports = ResistorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1308,7 +1308,7 @@ class Resistor(ElectricalElement):
         return {'R': self.resistance}
 
 
-class Varistor(ElectricalElement):
+class VaristorBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = 'ee_lib/Passive/Varistor'
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1320,11 +1320,11 @@ class Varistor(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Varistor.counter
-        Varistor.counter += 1
+        self.id = VaristorBlock.counter
+        VaristorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Varistor.PORTS
+        self.ports = VaristorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1392,7 +1392,7 @@ class Varistor(ElectricalElement):
         return parameters
 
 
-class Diode(ElectricalElement):
+class DiodeBlock(ElectricalElementBlock):
 
     DIRECTORY: Final[str] = 'ee_lib/Semiconductors & Converters/Diode'
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1402,11 +1402,11 @@ class Diode(ElectricalElement):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Diode.counter
-        Diode.counter += 1
+        self.id = DiodeBlock.counter
+        DiodeBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Diode.PORTS
+        self.ports = DiodeBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1424,11 +1424,11 @@ class Diode(ElectricalElement):
 
 
 # Mission
-class Mission(Component, ABC):
+class MissionBlock(ComponentBlock, ABC):
     pass
 
 
-class IncandescentLamp(Mission):
+class IncandescentLampBlock(MissionBlock):
 
     DIRECTORY: Final[str] = 'ee_lib/Passive/Incandescent Lamp'
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1']
@@ -1438,11 +1438,11 @@ class IncandescentLamp(Mission):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = IncandescentLamp.counter
-        IncandescentLamp.counter += 1
+        self.id = IncandescentLampBlock.counter
+        IncandescentLampBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = IncandescentLamp.PORTS
+        self.ports = IncandescentLampBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1461,7 +1461,7 @@ class IncandescentLamp(Mission):
         return {'R0': self.r_0, 'R1': self.r_1, 'Vrated': self.Vrated, 'alpha': self.alpha}
 
 
-class UniversalMotor(Mission):
+class UniversalMotorBlock(MissionBlock):
 
     DIRECTORY: Final[str] = 'ee_lib/Electromechanical/Brushed Motors/Universal Motor'
     PORTS: Final[List[str]] = ['+LConn 1', '-RConn 1', 'LConn 2', 'RConn 2']
@@ -1471,11 +1471,11 @@ class UniversalMotor(Mission):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = UniversalMotor.counter
-        UniversalMotor.counter += 1
+        self.id = UniversalMotorBlock.counter
+        UniversalMotorBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = UniversalMotor.PORTS
+        self.ports = UniversalMotorBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1501,7 +1501,7 @@ class UniversalMotor(Mission):
                 'V_dc': self.V_dc, 'P_in': self.P_in, 'Ltot': self.Ltot}
 
 
-class Inertia(Mission):
+class InertiaBlock(MissionBlock):
 
     DIRECTORY: Final[str] = 'fl_lib/Mechanical/Rotational Elements/Inertia'
     PORTS: Final[List[str]] = ['LConn 1', 'RConn 1']
@@ -1511,11 +1511,11 @@ class Inertia(Mission):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
-        self.id = Inertia.counter
-        Inertia.counter += 1
+        self.id = InertiaBlock.counter
+        InertiaBlock.counter += 1
 
         # Start with default list of ports
-        self.ports = Inertia.PORTS
+        self.ports = InertiaBlock.PORTS
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -1528,3 +1528,252 @@ class Inertia(Mission):
     @property
     def parameter(self) -> dict:
         return {'inertia': self.inertia, 'num_ports': self.num_ports}
+
+
+# Transistor
+class TransistorBlock(ComponentBlock, ABC):
+    pass
+
+
+class NChannelMOSFETBlock(TransistorBlock):
+    """
+    N-Channel MOSFET Block
+
+    :param r_ds: Drain-source on resistance R_DS(on) [Ohm]
+    :type r_ds: float
+    :param i_drain: Drain current, Ids, for R_DS(on) [A]
+    :type i_drain: float
+    :param v_gs: Gate-source voltage, Vgs, for R_DS(on) [V]
+    :type v_gs: float
+    :param v_th: Gate-source threshold voltage, Vth [V]
+    :type v_th: float
+    """
+
+    DIRECTORY: Final[str] = 'ee_lib/Semiconductors & Converters/N-Channel MOSFET'
+    PORTS: Final[List[str]] = ['LConn 1', 'RConn 1', 'RConn 2']     # -> RConn 1: Drain & RConn 2: Source
+    counter: int = 0
+
+    def __init__(self, r_ds: float = 0.025, i_drain: float = 6.0, v_gs: float = 10.0, v_th: float = 1.7, parameters: Dict = None):
+        super().__init__(parameters)
+
+        # Each instance gets a unique ID
+        self.id = NChannelMOSFETBlock.counter
+        NChannelMOSFETBlock.counter += 1
+
+        # Start with default list of ports
+        self.ports = NChannelMOSFETBlock.PORTS
+
+        # Prefer values from parameters dictionary
+        if isinstance(parameters, type(None)):
+            self.r_ds = float(r_ds)
+            self.i_drain = float(i_drain)
+            self.v_gs = float(v_gs)
+            self.v_th = float(v_th)
+        else:
+            self.r_ds = float(parameters['Rds'])
+            self.i_drain = float(parameters['Id'])
+            self.v_gs = float(parameters['Vgs'])
+            self.v_th = float(parameters['Vth'])
+
+    @property
+    def parameter(self) -> dict:
+        return {'Rds': self.r_ds, 'Id': self.i_drain, 'Vgs': self.v_gs, 'Vth': self.v_th}
+
+
+class PChannelMOSFETBlock(TransistorBlock):
+    """
+    P-Channel MOSFET Block
+
+    :param r_ds: Drain-source on resistance R_DS(on) [Ohm]
+    :type r_ds: float
+    :param i_drain: Drain current, Ids, for R_DS(on) [A]
+    :type i_drain: float
+    :param v_gs: Gate-source voltage, Vgs, for R_DS(on) [V]
+    :type v_gs: float
+    :param v_th: Gate-source threshold voltage, Vth [V]
+    :type v_th: float
+    """
+
+    DIRECTORY: Final[str] = 'ee_lib/Semiconductors & Converters/P-Channel MOSFET'
+    PORTS: Final[List[str]] = ['LConn 1', 'RConn 1', 'RConn 2']  # -> RConn 1: Source & RConn 2: Drain
+    counter: int = 0
+
+    def __init__(self, r_ds: float = 0.167, i_drain: float = -2.5, v_gs: float = -4.5, v_th: float = -1.4, parameters: Dict = None):
+        super().__init__(parameters)
+
+        # Each instance gets a unique ID
+        self.id = PChannelMOSFETBlock.counter
+        PChannelMOSFETBlock.counter += 1
+
+        # Start with default list of ports
+        self.ports = PChannelMOSFETBlock.PORTS
+
+        # Prefer values from parameters dictionary
+        if isinstance(parameters, type(None)):
+            self.r_ds = float(r_ds)
+            self.i_drain = float(i_drain)
+            self.v_gs = float(v_gs)
+            self.v_th = float(v_th)
+        else:
+            self.r_ds = float(parameters['Rds'])
+            self.i_drain = float(parameters['Id'])
+            self.v_gs = float(parameters['Vgs'])
+            self.v_th = float(parameters['Vth'])
+
+    @property
+    def parameter(self) -> dict:
+        return {'Rds': self.r_ds, 'Id': self.i_drain, 'Vgs': self.v_gs, 'Vth': self.v_th}
+
+
+class NPNBipolarTransistorBlock(TransistorBlock):
+    """
+    NPN Bipolar Transistor Block
+
+    :param h_fe: Forward current transfer ratio
+    :type h_fe: float
+    :param h_oe: Output admittance [1/Ohm]
+    :type h_oe: float
+    :param ic_h: Collector current at which h-parameters are defined [mA]
+    :type ic_h: float
+    :param vce_h: Collector-emitter voltage at which h-parameters are defined [V]
+    :type vce_h: float
+    :param vbe: Voltage Vbe [V]
+    :type vbe: float
+    :param i_vbe: Current Ib for voltage Vbe [mA]
+    :type i_vbe: float
+    :param br: Reverse current transfer ratio BR
+    :type br: float
+    :param r_c: Collector resistance RC [Ohm]
+    :type r_c: float
+    :param r_e: Emitter resistance RE [Ohm]
+    :type r_e: float
+    :param r_b: Emitter resistance RB [Ohm]
+    :type r_b: float
+    :param parameters: Block parameters in dictionary form.
+    :type parameters: dict
+    """
+
+    DIRECTORY: Final[str] = 'ee_lib/Semiconductors & Converters/NPN Bipolar Transistor'
+    PORTS: Final[List[str]] = ['LConn 1', 'RConn 1', 'RConn 2']     # -> LConn 1: Base RConn 1: Collector & RConn 2: Emitter
+    counter: int = 0
+
+    def __init__(self, h_fe: float = 100, h_oe: float = 50.0e-6, ic_h: float = 1.0, vce_h: float = 5.0,
+                 vbe: float = 0.55, i_vbe: float = 0.5, br: float = 1.0,
+                 r_c: float = 0.01, r_e: float = 1e-4, r_b: float = 1.0,
+                 parameters: Dict = None):
+
+        super().__init__(parameters)
+
+        # Each instance gets a unique ID
+        self.id = NPNBipolarTransistorBlock.counter
+        NPNBipolarTransistorBlock.counter += 1
+
+        # Start with default list of ports
+        self.ports = NPNBipolarTransistorBlock.PORTS
+
+        # Prefer values from parameters dictionary
+        if isinstance(parameters, type(None)):
+            self.h_fe = float(h_fe)
+            self.h_oe = float(h_oe)
+            self.ic_h = float(ic_h)
+            self.vce_h = float(vce_h)
+            self.vbe = float(vbe)
+            self.i_vbe = float(i_vbe)
+            self.br = float(br)
+            self.r_c = float(r_c)
+            self.r_e = float(r_e)
+            self.r_b = float(r_b)
+
+        else:
+            self.h_fe = float(parameters['hfe'])
+            self.h_oe = float(parameters['hoe'])
+            self.ic_h = float(parameters['Ic_h'])
+            self.vce_h = float(parameters['Vce_h'])
+            self.vbe = float(parameters['V1'])
+            self.i_vbe = float(parameters['I1'])
+            self.br = float(parameters['BR'])
+            self.r_c = float(parameters['RC'])
+            self.r_e = float(parameters['RE'])
+            self.r_b = float(parameters['RB'])
+
+    @property
+    def parameter(self) -> dict:
+        return {'hfe': self.h_fe, 'hoe': self.h_oe, 'Ic_h': self.ic_h, 'Vce_h': self.vce_h,
+                'V1': self.vbe, 'I1': self.i_vbe, 'BR': self.br, 'RC': self.r_c, 'RE': self.r_e, 'RB': self.r_b}
+
+
+class PNPBipolarTransistorBlock(TransistorBlock):
+    """
+    PNP Bipolar Transistor Block
+
+    :param h_fe: Forward current transfer ratio
+    :type h_fe: float
+    :param h_oe: Output admittance [1/Ohm]
+    :type h_oe: float
+    :param ic_h: Collector current at which h-parameters are defined [mA]
+    :type ic_h: float
+    :param vce_h: Collector-emitter voltage at which h-parameters are defined [V]
+    :type vce_h: float
+    :param vbe: Voltage Vbe [V]
+    :type vbe: float
+    :param i_vbe: Current Ib for voltage Vbe [mA]
+    :type i_vbe: float
+    :param br: Reverse current transfer ratio BR
+    :type br: float
+    :param r_c: Collector resistance RC [Ohm]
+    :type r_c: float
+    :param r_e: Emitter resistance RE [Ohm]
+    :type r_e: float
+    :param r_b: Emitter resistance RB [Ohm]
+    :type r_b: float
+    :param parameters: Block parameters in dictionary form.
+    :type parameters: dict
+    """
+
+    DIRECTORY: Final[str] = 'ee_lib/Semiconductors & Converters/PNP Bipolar Transistor'
+    PORTS: Final[List[str]] = ['LConn 1', 'RConn 1', 'RConn 2']  # -> LConn 1: Base RConn 1: Emitter & RConn 2: Collector
+    counter: int = 0
+
+    def __init__(self, h_fe: float = 100, h_oe: float = 50.0e-6, ic_h: float = -1.0, vce_h: float = -5.0,
+                 vbe: float = -0.55, i_vbe: float = -0.5, br: float = 1.0,
+                 r_c: float = 0.01, r_e: float = 1e-4, r_b: float = 1.0,
+                 parameters: Dict = None):
+
+        super().__init__(parameters)
+
+        # Each instance gets a unique ID
+        self.id = PNPBipolarTransistorBlock.counter
+        PNPBipolarTransistorBlock.counter += 1
+
+        # Start with default list of ports
+        self.ports = PNPBipolarTransistorBlock.PORTS
+
+        # Prefer values from parameters dictionary
+        if isinstance(parameters, type(None)):
+            self.h_fe = float(h_fe)
+            self.h_oe = float(h_oe)
+            self.ic_h = float(ic_h)
+            self.vce_h = float(vce_h)
+            self.vbe = float(vbe)
+            self.i_vbe = float(i_vbe)
+            self.br = float(br)
+            self.r_c = float(r_c)
+            self.r_e = float(r_e)
+            self.r_b = float(r_b)
+
+        else:
+            self.h_fe = float(parameters['hfe'])
+            self.h_oe = float(parameters['hoe'])
+            self.ic_h = float(parameters['Ic_h'])
+            self.vce_h = float(parameters['Vce_h'])
+            self.vbe = float(parameters['V1'])
+            self.i_vbe = float(parameters['I1'])
+            self.br = float(parameters['BR'])
+            self.r_c = float(parameters['RC'])
+            self.r_e = float(parameters['RE'])
+            self.r_b = float(parameters['RB'])
+
+    @property
+    def parameter(self) -> dict:
+        return {'hfe': self.h_fe, 'hoe': self.h_oe, 'Ic_h': self.ic_h, 'Vce_h': self.vce_h,
+                'V1': self.vbe, 'I1': self.i_vbe, 'BR': self.br, 'RC': self.r_c, 'RE': self.r_e, 'RB': self.r_b}
