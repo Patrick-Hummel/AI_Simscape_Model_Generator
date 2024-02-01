@@ -6,129 +6,1068 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>480</height>
+    <width>1100</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>AISiMoGen - AI Simscape Model Generator v.0.1</string>
+   <string>AISiMoGen - AI Simscape Model Generator v.1.0</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="pushButton_generate_response">
-    <property name="geometry">
-     <rect>
-      <x>550</x>
-      <y>140</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Send</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="plainTextEdit_prompt">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>601</width>
-      <height>101</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="plainTextEdit_response">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>220</y>
-      <width>601</width>
-      <height>201</height>
-     </rect>
-    </property>
-    <property name="readOnly">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_prompt">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>10</y>
-      <width>47</width>
-      <height>13</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Prompt</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_response">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>200</y>
-      <width>71</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Response</string>
-    </property>
-   </widget>
-   <widget class="QProgressBar" name="progressBar_request_prompt">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>140</y>
-      <width>171</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="value">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="bottomMargin">
      <number>0</number>
     </property>
-   </widget>
-   <widget class="QLabel" name="label_progress_request_prompt">
-    <property name="geometry">
-     <rect>
-      <x>210</x>
-      <y>140</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Press button...</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
+    <item>
+     <widget class="QTabWidget" name="tabWidget_main">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab_specification">
+       <attribute name="title">
+        <string>Specification</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QGroupBox" name="groupBox_requirements_specification">
+          <property name="title">
+           <string>System Specification</string>
+          </property>
+          <widget class="QPushButton" name="pushButton_create_specification_summary">
+           <property name="geometry">
+            <rect>
+             <x>950</x>
+             <y>240</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Send</string>
+           </property>
+          </widget>
+          <widget class="QPlainTextEdit" name="plainTextEdit_user_specification">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>30</y>
+             <width>911</width>
+             <height>231</height>
+            </rect>
+           </property>
+           <property name="placeholderText">
+            <string>Describe the system you would like to have generated...</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_specification_summary">
+          <property name="title">
+           <string>Specification Summary (AI)</string>
+          </property>
+          <widget class="QPlainTextEdit" name="plainTextEdit_specification_summary">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>50</y>
+             <width>911</width>
+             <height>211</height>
+            </rect>
+           </property>
+           <property name="documentTitle">
+            <string/>
+           </property>
+           <property name="readOnly">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string>Send your specification to the AI and the resulting summary will be displayed here...</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_response_2">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>30</y>
+             <width>691</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>If you see mistakes, alter your description above, change some LLM parameters or just fix them yourself below. When done, click &quot;Verify&quot;.</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_verify_specification_summary">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>950</x>
+             <y>240</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Verify</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_abstract_system_model">
+       <attribute name="title">
+        <string>Abstract Model</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QTabWidget" name="tabWidget_abstract_model">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tab_5">
+           <attribute name="title">
+            <string>Visualization</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <widget class="QGroupBox" name="groupBox_abstract_model_visualization">
+              <property name="title">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_tree_abstract_model">
+           <attribute name="title">
+            <string>Abstract Model Tree</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QTreeWidget" name="treeWidget_abstract_model">
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string notr="true">1</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_tree_json_response">
+           <attribute name="title">
+            <string>JSON Response Tree</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="QTreeWidget" name="treeWidget_json_response">
+              <property name="columnCount">
+               <number>1</number>
+              </property>
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string notr="true">1</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_4">
+           <attribute name="title">
+            <string>Response</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_11">
+            <item>
+             <widget class="QPlainTextEdit" name="plainTextEdit_ai_abstract_system_model">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_6">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>150</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Provide Feedback</string>
+          </property>
+          <widget class="QPlainTextEdit" name="plainTextEdit_abstract_model_feedback">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>20</y>
+             <width>841</width>
+             <height>121</height>
+            </rect>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>100</height>
+            </size>
+           </property>
+           <property name="placeholderText">
+            <string>Something wrong? Here you can provide direct feedback to the AI to try to improve the generated abstract system model...</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_abstract_model_send_feedback">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>880</x>
+             <y>80</y>
+             <width>101</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Send Feedback</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_create_detailed_model">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>880</x>
+             <y>110</y>
+             <width>141</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Create Detailed Model</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_clear_abstract_model_feedback_text">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>880</x>
+             <y>50</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Clear</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_abstract_model_manual_auto_correction">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>880</x>
+             <y>20</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Auto Correct</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_detailed_system_model">
+       <attribute name="title">
+        <string>Detailed Model</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tab_detailed_model_visualization">
+           <attribute name="title">
+            <string>Visualization</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <item>
+             <widget class="QGroupBox" name="groupBox_detailed_model_visualization">
+              <property name="title">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_detailed_model_tree">
+           <attribute name="title">
+            <string>Detailed Model Tree</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <item>
+             <widget class="QTreeWidget" name="treeWidget_detailed_model">
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string notr="true">1</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QPushButton" name="pushButton_build_simscape_model">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>880</x>
+             <y>60</y>
+             <width>141</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Build Simscape Model</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_component">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>10</y>
+             <width>190</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_detailed_model_add_component">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>210</x>
+             <y>10</y>
+             <width>101</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Add component</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_connection_from">
+           <property name="geometry">
+            <rect>
+             <x>50</x>
+             <y>40</y>
+             <width>200</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_3">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>40</y>
+             <width>31</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>From:</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_4">
+           <property name="geometry">
+            <rect>
+             <x>350</x>
+             <y>40</y>
+             <width>21</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>To:</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_connection_to">
+           <property name="geometry">
+            <rect>
+             <x>370</x>
+             <y>40</y>
+             <width>200</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_detailed_model_add_connection">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>660</x>
+             <y>40</y>
+             <width>101</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Add connection</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_subsystem">
+           <property name="geometry">
+            <rect>
+             <x>330</x>
+             <y>10</y>
+             <width>230</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_detailed_model_add_subsystem">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>570</x>
+             <y>10</y>
+             <width>101</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Add subsystem</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_connection_from_port">
+           <property name="geometry">
+            <rect>
+             <x>260</x>
+             <y>40</y>
+             <width>69</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="comboBox_add_connection_to_port">
+           <property name="geometry">
+            <rect>
+             <x>580</x>
+             <y>40</y>
+             <width>69</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_not_connected_warning">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>960</x>
+             <y>10</y>
+             <width>91</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(255, 0, 0);</string>
+           </property>
+           <property name="inputMethodHints">
+            <set>Qt::ImhNone</set>
+           </property>
+           <property name="text">
+            <string>Not connected</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButton_detailed_model_delete_selection">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>70</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Delete</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_detailed_model_deletion_selection">
+           <property name="geometry">
+            <rect>
+             <x>100</x>
+             <y>70</y>
+             <width>401</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Select object for deletion (middle mouse button)...</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_upgrade_detailed_model">
+       <attribute name="title">
+        <string>Upgrade Model</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_configuration">
+       <attribute name="title">
+        <string>Configuration</string>
+       </attribute>
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>30</y>
+          <width>81</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Current State:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_info_current_state">
+        <property name="geometry">
+         <rect>
+          <x>120</x>
+          <y>30</y>
+          <width>351</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_5">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>60</y>
+          <width>111</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Model Temperature:</string>
+        </property>
+       </widget>
+       <widget class="QSlider" name="horizontalSlider_config_model_temperature">
+        <property name="geometry">
+         <rect>
+          <x>230</x>
+          <y>60</y>
+          <width>160</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="maximum">
+         <number>200</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+       </widget>
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_config_model_temperature">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>60</y>
+          <width>62</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="maximum">
+         <double>2.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="tab_prompt_history">
+       <attribute name="title">
+        <string>Prompt History</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_10">
+        <item>
+         <widget class="QPlainTextEdit" name="plainTextEdit_prompt_history">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_tools">
+       <attribute name="title">
+        <string>Tools</string>
+       </attribute>
+       <widget class="QPlainTextEdit" name="plainTextEdit_response">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>220</y>
+          <width>601</width>
+          <height>201</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_response">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>190</y>
+          <width>71</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Response</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_generate_response">
+        <property name="geometry">
+         <rect>
+          <x>540</x>
+          <y>150</y>
+          <width>75</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Send</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_prompt">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>20</y>
+          <width>47</width>
+          <height>13</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Prompt</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_progress_request_prompt">
+        <property name="geometry">
+         <rect>
+          <x>210</x>
+          <y>150</y>
+          <width>91</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Press button...</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+       <widget class="QProgressBar" name="progressBar_request_prompt">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>150</y>
+          <width>171</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
+       <widget class="QPlainTextEdit" name="plainTextEdit_prompt">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>40</y>
+          <width>601</width>
+          <height>101</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBox_3">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="title">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+      </property>
+      <property name="flat">
+       <bool>true</bool>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <property name="bottomMargin">
+        <number>5</number>
+       </property>
+       <item>
+        <widget class="QProgressBar" name="progressBar_main_request">
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_progress_main_request">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Press button...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_desc_current_model">
+         <property name="text">
+          <string>Model:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox_current_model">
+         <property name="maxVisibleItems">
+          <number>16</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_desc_last_response_time">
+         <property name="text">
+          <string>Last Response Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_last_response_time">
+         <property name="text">
+          <string>-</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_desc_total_tokens">
+         <property name="text">
+          <string>Total Tokens:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_total_tokens">
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_desc_total_cost">
+         <property name="text">
+          <string>Total Cost (EUR):</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_total_cost_euro">
+         <property name="text">
+          <string>0.00</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>640</width>
+     <width>1100</width>
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu_file">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_save_to_file_abstract"/>
+    <addaction name="action_save_to_file_detailed"/>
+   </widget>
+   <widget class="QMenu" name="menu_edit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="action_undo_change_to_abstract_model"/>
+    <addaction name="action_undo_change_to_detailed_model"/>
+   </widget>
+   <widget class="QMenu" name="menu_help">
+    <property name="title">
+     <string>Help</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_about">
+    <property name="title">
+     <string>About</string>
+    </property>
+   </widget>
+   <addaction name="menu_file"/>
+   <addaction name="menu_edit"/>
+   <addaction name="menu_help"/>
+   <addaction name="menu_about"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>0</height>
+    </size>
+   </property>
+  </widget>
+  <action name="action_undo_change_to_abstract_model">
+   <property name="text">
+    <string>Undo (abstract)</string>
+   </property>
+  </action>
+  <action name="action_undo_change_to_detailed_model">
+   <property name="text">
+    <string>Undo (detailed)</string>
+   </property>
+  </action>
+  <action name="action_save_to_file_abstract">
+   <property name="text">
+    <string>Save to file (abstract)</string>
+   </property>
+  </action>
+  <action name="action_save_to_file_detailed">
+   <property name="text">
+    <string>Save to file (detailed)</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

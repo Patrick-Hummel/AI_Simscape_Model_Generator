@@ -3,7 +3,7 @@
 """
 Definition of global constants.
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "1"
@@ -28,3 +28,8 @@ PATH_DEFAULT_PROMPT_INSTRUCTIONS_JSON_RESPONSE = Path("data/prompts/prompt_instr
 PATH_DEFAULT_LAST_GENERATED_PROMPT_TXT_FILE = Path("data/prompts/last_generated_prompt.txt")
 
 PATH_DEFAULT_RESPONSES_DIR = Path("data/responses")
+
+PATH_EXAMPLE_USER_SPECIFICATION = Path("data/examples/urs_example.txt")
+
+OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K = 0.0010
+OPENAI_GPT35_TURBO_OUTPUT_TOKENS_COST_USD_PER_1K = 0.0020

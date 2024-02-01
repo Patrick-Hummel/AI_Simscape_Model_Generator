@@ -1,0 +1,1 @@
+I would like to have an electrical circuit with two lamps that are each activated by a switch. A battery should power the circuit.

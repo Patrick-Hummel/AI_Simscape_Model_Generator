@@ -3,7 +3,7 @@
 """
 Main module of the AI Simscape Model Generator.
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "1"
@@ -32,14 +32,14 @@ def main():
 
     # 1) Generate prompt
     prompt_generator = PromptGenerator()
-    prompt = prompt_generator.generate_prompt("Create a circuit with a battery, two lamps and two switches. "
+    prompt = prompt_generator.generate_prompt_create_abstract_model("Create a circuit with a battery, two lamps and two switches. "
                                               "Each lamp may be controlled by one switch.")
 
     # 2) Send prompt to LLM and await response
     if SEND_NEW_REQUEST:
 
         print("Sending new request...")
-        response = prompt_request_factory.request(prompt, LLModel.OPENAI_GPT35_Turbo)
+        response = prompt_request_factory.request_as_function_call(prompt, LLModel.OPENAI_GPT35_Turbo)
 
     else:
 
@@ -51,7 +51,7 @@ def main():
 
     # 3) Interpret response
     response_interpreter = ResponseInterpreter()
-    abstract_system = response_interpreter.interpret_response(response)
+    abstract_system = response_interpreter.interpret_abstract_model_json_response(response)
 
     # 4) Build detailed system
     builder = SystemBuilder(abstract_system)

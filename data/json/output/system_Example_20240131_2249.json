@@ -14,26 +14,16 @@
     ],
     "subsystems": [
         {
-            "id": "ControlledVoltageSourceDCSubsystem_0",
+            "id": "LampMissionSubsystem_0",
             "components": [
                 {
-                    "id": "ControlledVoltageSourceBlock_0",
-                    "type": "ControlledVoltageSourceBlock",
-                    "parameters": {}
-                },
-                {
-                    "id": "SimuPSConvBlock_0",
-                    "type": "SimuPSConvBlock",
+                    "id": "IncandescentLampBlock_0",
+                    "type": "IncandescentLampBlock",
                     "parameters": {
-                        "FilteringAndDerivatives": "filter"
-                    }
-                },
-                {
-                    "id": "FromWorkspaceBlock_0",
-                    "type": "FromWorkspaceBlock",
-                    "parameters": {
-                        "SampleTime": 0,
-                        "VariableName": "Subsystem_0_ControlledVoltageSourceBlock_0_simin_0"
+                        "R0": 0.15,
+                        "R1": 1.0,
+                        "Vrated": 12.0,
+                        "alpha": 0.004
                     }
                 },
                 {
@@ -47,57 +37,6 @@
                 },
                 {
                     "id": "ConnectionPortBlock_1",
-                    "type": "ConnectionPortBlock",
-                    "parameters": {
-                        "Orientation": "right",
-                        "Side": "right",
-                        "_Port_Type": "Outport"
-                    }
-                }
-            ],
-            "connections": [
-                {
-                    "from": "SimuPSConvBlock_0#RConn 1",
-                    "to": "ControlledVoltageSourceBlock_0#RConn 1"
-                },
-                {
-                    "from": "FromWorkspaceBlock_0#1",
-                    "to": "SimuPSConvBlock_0#1"
-                },
-                {
-                    "from": "ConnectionPortBlock_0#RConn 1",
-                    "to": "ControlledVoltageSourceBlock_0#LConn 1"
-                },
-                {
-                    "from": "ControlledVoltageSourceBlock_0#RConn 2",
-                    "to": "ConnectionPortBlock_1#RConn 1"
-                }
-            ]
-        },
-        {
-            "id": "LampMissionSubsystem_1",
-            "components": [
-                {
-                    "id": "IncandescentLampBlock_0",
-                    "type": "IncandescentLampBlock",
-                    "parameters": {
-                        "R0": 0.15,
-                        "R1": 1.0,
-                        "Vrated": 12.0,
-                        "alpha": 0.004
-                    }
-                },
-                {
-                    "id": "ConnectionPortBlock_2",
-                    "type": "ConnectionPortBlock",
-                    "parameters": {
-                        "Orientation": "left",
-                        "Side": "left",
-                        "_Port_Type": "Inport"
-                    }
-                },
-                {
-                    "id": "ConnectionPortBlock_3",
                     "type": "ConnectionPortBlock",
                     "parameters": {
                         "Orientation": "right",
@@ -120,7 +59,7 @@
                     "type": "ToWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_1_VoltageSensorBlock_0_simout_0",
+                        "VariableName": "Subsystem_0_VoltageSensorBlock_0_simout_0",
                         "SaveFormat": "Structure with Time"
                     }
                 },
@@ -144,7 +83,7 @@
                     "type": "ToWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_1_CurrentSensorBlock_0_simout_0",
+                        "VariableName": "Subsystem_0_CurrentSensorBlock_0_simout_0",
                         "SaveFormat": "Structure with Time"
                     }
                 },
@@ -189,7 +128,7 @@
                 },
                 {
                     "from": "CurrentSensorBlock_0#RConn 2",
-                    "to": "ConnectionPortBlock_2#RConn 1"
+                    "to": "ConnectionPortBlock_0#RConn 1"
                 },
                 {
                     "from": "CurrentSensorBlock_0#LConn 1",
@@ -197,12 +136,12 @@
                 },
                 {
                     "from": "IncandescentLampBlock_0#RConn 1",
-                    "to": "ConnectionPortBlock_3#RConn 1"
+                    "to": "ConnectionPortBlock_1#RConn 1"
                 }
             ]
         },
         {
-            "id": "LampMissionSubsystem_2",
+            "id": "LampMissionSubsystem_1",
             "components": [
                 {
                     "id": "IncandescentLampBlock_1",
@@ -215,7 +154,7 @@
                     }
                 },
                 {
-                    "id": "ConnectionPortBlock_4",
+                    "id": "ConnectionPortBlock_2",
                     "type": "ConnectionPortBlock",
                     "parameters": {
                         "Orientation": "left",
@@ -224,7 +163,7 @@
                     }
                 },
                 {
-                    "id": "ConnectionPortBlock_5",
+                    "id": "ConnectionPortBlock_3",
                     "type": "ConnectionPortBlock",
                     "parameters": {
                         "Orientation": "right",
@@ -247,7 +186,7 @@
                     "type": "ToWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_2_VoltageSensorBlock_1_simout_0",
+                        "VariableName": "Subsystem_1_VoltageSensorBlock_1_simout_0",
                         "SaveFormat": "Structure with Time"
                     }
                 },
@@ -271,7 +210,7 @@
                     "type": "ToWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_2_CurrentSensorBlock_1_simout_0",
+                        "VariableName": "Subsystem_1_CurrentSensorBlock_1_simout_0",
                         "SaveFormat": "Structure with Time"
                     }
                 },
@@ -316,7 +255,7 @@
                 },
                 {
                     "from": "CurrentSensorBlock_1#RConn 2",
-                    "to": "ConnectionPortBlock_4#RConn 1"
+                    "to": "ConnectionPortBlock_2#RConn 1"
                 },
                 {
                     "from": "CurrentSensorBlock_1#LConn 1",
@@ -324,6 +263,69 @@
                 },
                 {
                     "from": "IncandescentLampBlock_1#RConn 1",
+                    "to": "ConnectionPortBlock_3#RConn 1"
+                }
+            ]
+        },
+        {
+            "id": "SPSTSwitchSubsystem_2",
+            "components": [
+                {
+                    "id": "SPSTSwitchBlock_0",
+                    "type": "SPSTSwitchBlock",
+                    "parameters": {
+                        "Threshold": 0.5
+                    }
+                },
+                {
+                    "id": "SimuPSConvBlock_0",
+                    "type": "SimuPSConvBlock",
+                    "parameters": {
+                        "FilteringAndDerivatives": "filter"
+                    }
+                },
+                {
+                    "id": "FromWorkspaceBlock_0",
+                    "type": "FromWorkspaceBlock",
+                    "parameters": {
+                        "SampleTime": 0,
+                        "VariableName": "Subsystem_2_SPSTSwitchBlock_0_simin_0"
+                    }
+                },
+                {
+                    "id": "ConnectionPortBlock_4",
+                    "type": "ConnectionPortBlock",
+                    "parameters": {
+                        "Orientation": "left",
+                        "Side": "left",
+                        "_Port_Type": "Inport"
+                    }
+                },
+                {
+                    "id": "ConnectionPortBlock_5",
+                    "type": "ConnectionPortBlock",
+                    "parameters": {
+                        "Orientation": "right",
+                        "Side": "right",
+                        "_Port_Type": "Outport"
+                    }
+                }
+            ],
+            "connections": [
+                {
+                    "from": "SimuPSConvBlock_0#RConn 1",
+                    "to": "SPSTSwitchBlock_0#LConn 1"
+                },
+                {
+                    "from": "FromWorkspaceBlock_0#1",
+                    "to": "SimuPSConvBlock_0#1"
+                },
+                {
+                    "from": "ConnectionPortBlock_4#RConn 1",
+                    "to": "SPSTSwitchBlock_0#LConn 2"
+                },
+                {
+                    "from": "SPSTSwitchBlock_0#RConn 1",
                     "to": "ConnectionPortBlock_5#RConn 1"
                 }
             ]
@@ -332,7 +334,7 @@
             "id": "SPSTSwitchSubsystem_3",
             "components": [
                 {
-                    "id": "SPSTSwitchBlock_0",
+                    "id": "SPSTSwitchBlock_1",
                     "type": "SPSTSwitchBlock",
                     "parameters": {
                         "Threshold": 0.5
@@ -350,7 +352,7 @@
                     "type": "FromWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_3_SPSTSwitchBlock_0_simin_0"
+                        "VariableName": "Subsystem_3_SPSTSwitchBlock_1_simin_0"
                     }
                 },
                 {
@@ -375,7 +377,7 @@
             "connections": [
                 {
                     "from": "SimuPSConvBlock_1#RConn 1",
-                    "to": "SPSTSwitchBlock_0#LConn 1"
+                    "to": "SPSTSwitchBlock_1#LConn 1"
                 },
                 {
                     "from": "FromWorkspaceBlock_1#1",
@@ -383,23 +385,21 @@
                 },
                 {
                     "from": "ConnectionPortBlock_6#RConn 1",
-                    "to": "SPSTSwitchBlock_0#LConn 2"
+                    "to": "SPSTSwitchBlock_1#LConn 2"
                 },
                 {
-                    "from": "SPSTSwitchBlock_0#RConn 1",
+                    "from": "SPSTSwitchBlock_1#RConn 1",
                     "to": "ConnectionPortBlock_7#RConn 1"
                 }
             ]
         },
         {
-            "id": "SPSTSwitchSubsystem_4",
+            "id": "ControlledVoltageSourceDCSubsystem_4",
             "components": [
                 {
-                    "id": "SPSTSwitchBlock_1",
-                    "type": "SPSTSwitchBlock",
-                    "parameters": {
-                        "Threshold": 0.5
-                    }
+                    "id": "ControlledVoltageSourceBlock_0",
+                    "type": "ControlledVoltageSourceBlock",
+                    "parameters": {}
                 },
                 {
                     "id": "SimuPSConvBlock_2",
@@ -413,7 +413,7 @@
                     "type": "FromWorkspaceBlock",
                     "parameters": {
                         "SampleTime": 0,
-                        "VariableName": "Subsystem_4_SPSTSwitchBlock_1_simin_0"
+                        "VariableName": "Subsystem_4_ControlledVoltageSourceBlock_0_simin_0"
                     }
                 },
                 {
@@ -438,7 +438,7 @@
             "connections": [
                 {
                     "from": "SimuPSConvBlock_2#RConn 1",
-                    "to": "SPSTSwitchBlock_1#LConn 1"
+                    "to": "ControlledVoltageSourceBlock_0#RConn 1"
                 },
                 {
                     "from": "FromWorkspaceBlock_2#1",
@@ -446,10 +446,10 @@
                 },
                 {
                     "from": "ConnectionPortBlock_8#RConn 1",
-                    "to": "SPSTSwitchBlock_1#LConn 2"
+                    "to": "ControlledVoltageSourceBlock_0#LConn 1"
                 },
                 {
-                    "from": "SPSTSwitchBlock_1#RConn 1",
+                    "from": "ControlledVoltageSourceBlock_0#RConn 2",
                     "to": "ConnectionPortBlock_9#RConn 1"
                 }
             ]
@@ -457,8 +457,20 @@
     ],
     "connections": [
         {
-            "from": "ControlledVoltageSourceDCSubsystem_0#ConnectionPortBlock_1",
-            "to": "SPSTSwitchSubsystem_3#ConnectionPortBlock_6"
+            "from": "LampMissionSubsystem_0#ConnectionPortBlock_1",
+            "to": "SPSTSwitchSubsystem_2#ConnectionPortBlock_4"
+        },
+        {
+            "from": "SPSTSwitchSubsystem_2#ConnectionPortBlock_5",
+            "to": "ControlledVoltageSourceDCSubsystem_4#ConnectionPortBlock_8"
+        },
+        {
+            "from": "ControlledVoltageSourceDCSubsystem_4#ConnectionPortBlock_9",
+            "to": "LampMissionSubsystem_1#ConnectionPortBlock_2"
+        },
+        {
+            "from": "SPSTSwitchSubsystem_3#ConnectionPortBlock_7",
+            "to": "LampMissionSubsystem_0#ConnectionPortBlock_0"
         },
         {
             "from": "SPSTSwitchSubsystem_3#ConnectionPortBlock_7",
@@ -466,11 +478,11 @@
         },
         {
             "from": "SolverBlock_0#RConn 1",
-            "to": "ControlledVoltageSourceDCSubsystem_0#ConnectionPortBlock_0"
+            "to": "LampMissionSubsystem_0#ConnectionPortBlock_0"
         },
         {
             "from": "ReferenceBlock_0#LConn 1",
-            "to": "ControlledVoltageSourceDCSubsystem_0#ConnectionPortBlock_0"
+            "to": "LampMissionSubsystem_0#ConnectionPortBlock_0"
         }
     ],
     "parameters": {

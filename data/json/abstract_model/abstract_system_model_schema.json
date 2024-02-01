@@ -8,17 +8,7 @@
         "type": "object",
         "properties": {
           "id": {"type": "string"},
-          "input_ports": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "string"}
-              },
-              "required": ["id"]
-            }
-          },
-          "output_ports": {
+          "ports": {
             "type": "array",
             "items": {
               "type": "object",
@@ -29,7 +19,7 @@
             }
           }
         },
-        "required": ["id", "input_ports", "output_ports"]
+        "required": ["id", "ports"]
       }
     },
     "connections": {

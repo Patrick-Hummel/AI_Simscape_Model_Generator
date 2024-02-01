@@ -3,7 +3,7 @@
 """
 System builder that builds a detailed system model from an abstract system model created by the AI.
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "1"
@@ -49,9 +49,6 @@ class SystemBuilder:
                 new_component_block.check_connections()
                 new_system.add_subsystem(new_component_block)
 
-        # TODO Currently, each port may only be used once. This needs to be changed.
-        already_used_ports_dict = {}
-
         # Go through each abstract connection and create a similar connection between the newly added blocks
         for abstract_connection in self._abstract_system.abstract_connections_list:
 
@@ -63,63 +60,30 @@ class SystemBuilder:
             if abstract_connection.from_component.unique_name in new_component_block_dict:
                 from_block = new_component_block_dict[abstract_connection.from_component.unique_name]
 
-                # Go through all ports of the component and use each one only once
-                for out_port in from_block.ports:
-                    if from_block.unique_name in already_used_ports_dict:
-                        if out_port not in already_used_ports_dict[from_block.unique_name]:
-                            from_port = out_port
-                            already_used_ports_dict[from_block.unique_name].append(out_port)
-                            break
-                    else:
-                        already_used_ports_dict[from_block.unique_name] = [out_port]
-                        from_port = out_port
-                        break
+                # TODO Can this be improved? Check which type of port first!
+                # Use first output port found
+                from_port = from_block.ports[0]
 
             elif abstract_connection.from_component.unique_name in new_subsystem_dict:
                 from_block = new_subsystem_dict[abstract_connection.from_component.unique_name]
 
-                # Go through all output ports of the system and use each one only once
-                for out_port in from_block.out_ports:
-                    if from_block.unique_name in already_used_ports_dict:
-                        if out_port.unique_name not in already_used_ports_dict[from_block.unique_name]:
-                            from_port = out_port.unique_name
-                            already_used_ports_dict[from_block.unique_name].append(out_port.unique_name)
-                            break
-                    else:
-                        from_port = out_port.unique_name
-                        already_used_ports_dict[from_block.unique_name] = [out_port.unique_name]
-                        break
-
+                # TODO Can this be improved?
+                # Use first output port found
+                from_port = from_block.out_ports[0].unique_name
 
             if abstract_connection.to_component.unique_name in new_component_block_dict:
                 to_block = new_component_block_dict[abstract_connection.to_component.unique_name]
 
-                # Go through all ports of the component and use each one only once
-                for in_port in to_block.ports:
-                    if to_block.unique_name in already_used_ports_dict:
-                        if in_port not in already_used_ports_dict[to_block.unique_name]:
-                            to_port = in_port
-                            already_used_ports_dict[to_block.unique_name].append(in_port)
-                            break
-                    else:
-                        already_used_ports_dict[to_block.unique_name] = [in_port]
-                        to_port = in_port
-                        break
+                # TODO Can this be improved? Check which type of port first!
+                # Use first output port found
+                from_port = to_block.ports[0]
 
             elif abstract_connection.to_component.unique_name in new_subsystem_dict:
                 to_block = new_subsystem_dict[abstract_connection.to_component.unique_name]
 
-                # Go through all input ports of the system and use each one only once
-                for in_port in to_block.in_ports:
-                    if to_block.unique_name in already_used_ports_dict:
-                        if in_port.unique_name not in already_used_ports_dict[to_block.unique_name]:
-                            to_port = in_port.unique_name
-                            already_used_ports_dict[to_block.unique_name].append(in_port.unique_name)
-                            break
-                    else:
-                        to_port = in_port.unique_name
-                        already_used_ports_dict[to_block.unique_name] = [in_port.unique_name]
-                        break
+                # TODO Can this be improved?
+                # Use first output port found
+                to_port = to_block.in_ports[0].unique_name
 
             if (not isinstance(from_block, type(None)) and len(from_port) > 0
                     and not isinstance(to_block, type(None)) and len(to_port) > 0):

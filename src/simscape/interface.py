@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "2"
@@ -210,18 +210,50 @@ class SystemSimulinkAdapter(SimulinkInterface):
             if not param_name.startswith("_"):
                 eng.set_param(model_name, param_name, param_value_str, nargout=0)
 
-    def input_system(self, eng, model_name):
+    def translate_to_first_quadrant(self, positions: dict):
+
+        # Find minimum x and y values
+        min_x = min(point[0] for point in positions.values())
+        min_y = min(point[1] for point in positions.values())
+
+        # Translate points to the first quadrant (Y times -1.0 due to downwards Y direction in Simulink)
+        translated_dict = {key: (point[0] - min_x, (point[1] * -1.0) - min_y) for key, point in positions.items()}
+
+        return translated_dict
+
+    def scale_coordinates(self, points_dict, scale_factor):
+        scaled_dict = {key: (point[0] * scale_factor, point[1] * scale_factor) for key, point in points_dict.items()}
+        return scaled_dict
+
+    def translate_coordinates(self, points_dict, translate_x, translate_y):
+        translated_dict = {key: (point[0] + translate_x, point[1] + translate_y) for key, point in points_dict.items()}
+        return translated_dict
+
+    def input_system(self, eng, model_name: str, positions: dict):
 
         self.input_system_parameters(eng, model_name)
 
-        positions = [[100, 100, 130, 130]] * (len(self.system.subsystem_list) + len(self.system.component_list))
-        positions = self.make_positions(positions)
+        # Old version of calculating positions in a grid pattern
+        # positions = [[100, 100, 130, 130]] * (len(self.system.subsystem_list) + len(self.system.component_list))
+        # positions = self.make_positions(positions)
+
+        # Positions are in cartesian coordinate system (they may be in all quadrants)
+        # 1) move them to only one quadrant (x>0, y>0)
+        # 2) Scale them for Matlab (f.e. from 0.92 to 92)
+        # 3) Move them away from the edges of the viewing area
+        translated_dict_coordinates = self.translate_to_first_quadrant(positions)
+        scaled_translated_dict_coordinates = self.scale_coordinates(translated_dict_coordinates, 175.0)
+        scaled_translated_dict_coordinates = self.translate_coordinates(points_dict=scaled_translated_dict_coordinates, translate_x=100.0, translate_y=100.0)
 
         for index, subsys in enumerate(self.system.subsystem_list):
-            self.input_subsystem(eng, model_name, subsys, positions[index])
+            pos_x, pos_y = scaled_translated_dict_coordinates[subsys.unique_name]
+            position = [pos_x, pos_y, pos_x + 30, pos_y + 30]
+            self.input_subsystem(eng, model_name, subsys, position)
 
         for index, component in enumerate(self.system.component_list):
-            self.input_components(eng, model_name, component, positions[index + len(self.system.subsystem_list)])
+            pos_x, pos_y = scaled_translated_dict_coordinates[component.unique_name]
+            position = [pos_x, pos_y, pos_x + 30, pos_y + 30]
+            self.input_components(eng, model_name, component, position)
 
         for connection in self.system.connection_list:
 
@@ -277,7 +309,7 @@ class Implementer:
         self.eng = None
         self.adapter = adapter
 
-    def input_to_simulink(self, system: System, simulink_model_name: str):
+    def input_to_simulink(self, system: System, simulink_model_name: str, positions: dict):
 
         if not isinstance(self.eng, type(None)):
             self.eng.quit()
@@ -288,7 +320,7 @@ class Implementer:
         self.eng.new_system(simulink_model_name, nargout=0)
         self.eng.open_system(simulink_model_name, nargout=0)
 
-        interf.input_system(self.eng, simulink_model_name)
+        interf.input_system(self.eng, simulink_model_name, positions)
 
     def save_to_disk(self, simulink_model_name: str, output_directory: Path = None):
 

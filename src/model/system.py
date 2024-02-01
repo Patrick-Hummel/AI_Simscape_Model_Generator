@@ -7,16 +7,20 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "2"
 __author__ = "Patrick Hummel, Yu Zhang"
 
 import json
+from abc import ABC
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Type
+
+import networkx as nx
+from networkx import Graph
 
 from config.gobal_constants import MATLAB_DEFAULT_SOLVER, MATLAB_DEFAULT_STOP_TIME, PATH_DEFAULT_SYSTEM_OUTPUT_JSON
 from src.model.components import ComponentBlock, SignalBlock, PortBlock, ResistorBlock, VaristorBlock, DiodeBlock, \
@@ -121,10 +125,48 @@ class Container:
                 raise ValueError("Connections must be of type Connection.")
 
     def list_components(self):
-        return [f"{component.name}_id{component.ID}" for component in self.component_list]
+        return [f"{component.unique_name}" for component in self.component_list]
 
     def list_connections(self):
         return [f"{connection.from_port} -> {connection.to_port}" for connection in self.connection_list]
+
+    def remove_component_by_unique_name(self, unique_name: str):
+
+        # Find and remove the specified component
+        removal_index = self.list_components().index(unique_name)
+        self.component_list.pop(removal_index)
+
+        # Find and remove all connections associated with this component
+        self.remove_connections_single_component(unique_name)
+
+    def remove_connections_single_component(self, component_unique_name: str):
+
+        connections_for_removal_list = []
+
+        for connection in self.connection_list:
+
+            if (connection.from_block.unique_name == component_unique_name or connection.to_block.unique_name == component_unique_name):
+                connections_for_removal_list.append(connection)
+
+        if len(connections_for_removal_list) > 0:
+            for conn in connections_for_removal_list:
+                self.connection_list.remove(conn)
+
+    def remove_connection_by_component_names(self, first_component_unique_name: str, second_component_unique_name: str):
+
+        connection_for_removal = None
+
+        for connection in self.connection_list:
+
+            if (connection.from_block.unique_name == first_component_unique_name and connection.to_block.unique_name == second_component_unique_name) \
+                    or (connection.from_block.unique_name == second_component_unique_name and connection.to_block.unique_name == first_component_unique_name):
+                connection_for_removal = connection
+                break
+
+        if connection_for_removal is not None:
+            self.connection_list.remove(connection_for_removal)
+        else:
+            print(f"Connection between {first_component_unique_name} and {second_component_unique_name} not found for removal.")
 
     def check_connections(self):
 
@@ -156,6 +198,31 @@ class Container:
 
 
 class Subsystem(Container):
+
+    @staticmethod
+    def get_all_subclasses(cls) -> List[Type]:
+        all_subclasses = []
+
+        # Get direct subclasses
+        direct_subclasses = cls.__subclasses__()
+
+        # Recursively get subclasses of subclasses
+        for subclass in direct_subclasses:
+            all_subclasses.append(subclass)
+            all_subclasses.extend(cls.get_all_subclasses(subclass))
+
+        return all_subclasses
+
+    @classmethod
+    def get_implemented_default_subsystems_dict(cls) -> Dict[str, Type]:
+        implemented_types_list = [subclass for subclass in cls.get_all_subclasses(cls) if ABC not in subclass.__bases__]
+
+        implemented_types_dict = {}
+
+        for implemented_type in implemented_types_list:
+            implemented_types_dict[implemented_type.__name__] = implemented_type
+
+        return implemented_types_dict
 
     counter: int = 0
 
@@ -430,6 +497,28 @@ class System(Container):
                 "connections": [connection.as_dict() for connection in self.connection_list],
                 "parameters": self.parameter}
 
+    def as_networkx_graph(self) -> Graph:
+
+        system_graph = nx.Graph()
+
+        edges_list = []
+
+        for connection in self.connection_list:
+            edges_list.append((connection.from_block.unique_name, connection.to_block.unique_name))
+
+        system_graph.add_edges_from(edges_list)
+
+        components_unique_name_list = [component.unique_name for component in self.component_list]
+        components_unique_name_list.extend(
+            [subsystem.unique_name for subsystem in self.subsystem_list])
+        included_node_list = list(system_graph.nodes)
+
+        for node in components_unique_name_list:
+            if node not in included_node_list:
+                system_graph.add_node(node)
+
+        return system_graph
+
     def save_as_json(self, output_directory: Path = None):
 
         if isinstance(output_directory, type(None)):
@@ -522,8 +611,17 @@ class System(Container):
             else:
                 raise ValueError("Only instances of Subsystem can be added to the subsystem_list.")
 
-    def list_subsystem(self) -> list:
-        return [f"{subsystem.name}_id{subsystem.id}" for subsystem in self.subsystem_list]
+    def list_subsystems(self) -> list:
+        return [f"{subsystem.unique_name}" for subsystem in self.subsystem_list]
+
+    def remove_subsystem_by_unique_name(self, unique_name: str):
+
+        # Find and remove specified subsystem
+        removal_index = self.list_subsystems().index(unique_name)
+        self.subsystem_list.pop(removal_index)
+
+        # Find and remove all connections associated with this component
+        self.remove_connections_single_component(unique_name)
 
     def change_component_parameter(self, parameter_name, parameter_value, component_name, component_id,
                                    subsystem_type=None, subsystem_id=None):

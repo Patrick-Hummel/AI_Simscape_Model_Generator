@@ -7,13 +7,17 @@ Worker solution inspired by the answer of user "eyllanesc" on Stack Overflow (18
 https://stackoverflow.com/questions/66265219/how-to-update-pyqt-progressbar-from-an-independent-function-with-arguments
 Answer: https://stackoverflow.com/a/66266068 User: https://stackoverflow.com/users/6622587/eyllanesc
 
-Last modification: 23.11.2023
+Last modification: 01.02.2024
 """
 
-__version__ = "1"
+__version__ = "2"
 __author__ = "Patrick Hummel"
 
+from typing import Callable, Union
+
 from PyQt5 import QtCore
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QProgressBar, QLabel
 
 
 class PercentageWorker(QtCore.QObject):
@@ -23,10 +27,23 @@ class PercentageWorker(QtCore.QObject):
     percentageChanged = QtCore.pyqtSignal(int)
     textChanged = QtCore.pyqtSignal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, progress_bar: QProgressBar | None = None,
+                 progress_bar_label: QLabel | None = None,
+                 on_finished: Union[Callable, None] = None,
+                 parent: QObject | None = None):
+
         super().__init__(parent)
         self._percentage = 0
-        self._text = "Example"
+        self._text = ""
+
+        if progress_bar is not None:
+            self.percentageChanged.connect(progress_bar.setValue)
+
+        if progress_bar_label is not None:
+            self.textChanged.connect(progress_bar_label.setText)
+
+        if on_finished is not None:
+            self.finished.connect(on_finished)
 
     @property
     def percentage(self):

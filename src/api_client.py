@@ -8,17 +8,20 @@ https://stackoverflow.com/questions/31269974/why-singleton-in-python-calls-init-
 Answer: https://stackoverflow.com/a/31270973 User: https://stackoverflow.com/users/3102935/worldsender
 
 
-Last modification: 28.11.2023
+Last modification: 01.02.2024
 """
 
 __version__ = "1"
 __author__ = "Patrick Hummel"
 
 import json
+from time import time
 
 from openai import OpenAI
+from bardapi import Bard
 
 from config.gobal_constants import PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE
+from src.model.response import ResponseData
 
 
 class Singleton(type):
@@ -42,12 +45,14 @@ class OpenAIGPTClient(metaclass=Singleton):
 
         self.json_response_schema.pop('$schema', None)
 
-    def request(self, prompt: str) -> str:
+    def request(self, prompt: str) -> ResponseData:
+
+        start_time = time()
 
         # Request a valid json as response format
         completion = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
-            response_format={"type": "json_object"},
+            # response_format={"type": "json_object"},
             messages=[
                 {"role": "system",
                  "content": "You are a helpful assistant."},
@@ -59,9 +64,16 @@ class OpenAIGPTClient(metaclass=Singleton):
               f"Completion = {completion.usage.completion_tokens}, "
               f"Total = {completion.usage.total_tokens}")
 
-        return completion.choices[0].message.content
+        response_data = ResponseData(response_str=completion.choices[0].message.content,
+                                     input_tokens=completion.usage.prompt_tokens,
+                                     output_tokens=completion.usage.completion_tokens,
+                                     time_seconds=time() - start_time)
 
-    def request_as_function_call(self, prompt: str) -> str:
+        return response_data
+
+    def request_as_function_call(self, prompt: str) -> ResponseData:
+
+        start_time = time()
 
         # Request a valid json as response format
         completion = self.client.chat.completions.create(
@@ -83,13 +95,20 @@ class OpenAIGPTClient(metaclass=Singleton):
               f"Completion = {completion.usage.completion_tokens}, "
               f"Total = {completion.usage.total_tokens}")
 
-        return completion.choices[0].message.function_call.arguments
+        response_data = ResponseData(response_str=completion.choices[0].message.function_call.arguments,
+                                     input_tokens=completion.usage.prompt_tokens,
+                                     output_tokens=completion.usage.completion_tokens,
+                                     time_seconds=time() - start_time)
+
+        return response_data
 
 
 class GoogleBardClient(metaclass=Singleton):
 
     def __init__(self):
         pass
+        # self.client = Bard(token="")
+        # print("Newly created!")
 
     def request(self, prompt: str):
         raise NotImplementedError
