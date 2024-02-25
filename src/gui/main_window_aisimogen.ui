@@ -377,8 +377,8 @@
            </property>
            <property name="geometry">
             <rect>
-             <x>880</x>
-             <y>60</y>
+             <x>900</x>
+             <y>70</y>
              <width>141</width>
              <height>23</height>
             </rect>
@@ -575,6 +575,22 @@
             <string>Select object for deletion (middle mouse button)...</string>
            </property>
           </widget>
+          <widget class="QPushButton" name="pushButton_upgrade_detailed_model">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="geometry">
+            <rect>
+             <x>900</x>
+             <y>40</y>
+             <width>141</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Upgrade Detailed Model</string>
+           </property>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -583,6 +599,86 @@
        <attribute name="title">
         <string>Upgrade Model</string>
        </attribute>
+       <widget class="QPushButton" name="pushButton_single_upgrader">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>30</y>
+          <width>121</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Single Upgrader</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="comboBox_single_upgrader_pattern">
+        <property name="geometry">
+         <rect>
+          <x>180</x>
+          <y>30</y>
+          <width>101</width>
+          <height>22</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_combined_upgrader">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>70</y>
+          <width>121</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Combined Upgrader</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="comboBox_combined_upgrader_pattern">
+        <property name="geometry">
+         <rect>
+          <x>180</x>
+          <y>70</y>
+          <width>101</width>
+          <height>22</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QTreeWidget" name="treeWidget_detailed_model_2">
+        <property name="geometry">
+         <rect>
+          <x>520</x>
+          <y>40</y>
+          <width>521</width>
+          <height>431</height>
+         </rect>
+        </property>
+        <attribute name="headerVisible">
+         <bool>false</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
+       </widget>
+       <widget class="QSpinBox" name="spinBox_upgrader_target">
+        <property name="geometry">
+         <rect>
+          <x>320</x>
+          <y>30</y>
+          <width>42</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="value">
+         <number>3</number>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="tab_configuration">
        <attribute name="title">

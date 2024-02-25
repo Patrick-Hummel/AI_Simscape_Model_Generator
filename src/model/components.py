@@ -8,7 +8,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 28.11.2023
+Last modification: 25.02.2024
 """
 
 __version__ = "2"
@@ -255,6 +255,9 @@ class FromWorkspaceBlock(WorkspaceBlock):
     def parameter(self) -> dict:
         return {'SampleTime': self.sample_time, 'VariableName': self.variable_name}
 
+    def set_unique_variable_name(self, subsys_id: id, component_unique_name: str) -> None:
+        self.variable_name = f"simin_subsys_{subsys_id}_{component_unique_name}"
+
 
 class ToWorkspaceBlock(WorkspaceBlock):
 
@@ -262,7 +265,7 @@ class ToWorkspaceBlock(WorkspaceBlock):
     PORTS: Final[List[str]] = ['IN1']
     counter: int = 0
 
-    def __init__(self, variable_name: str = 'simout', sample_time: int = -1, parameters: Dict = None):
+    def __init__(self, variable_name: str = '', sample_time: int = -1, parameters: Dict = None):
         super().__init__(parameters)
 
         # Each instance gets a unique ID
@@ -271,6 +274,10 @@ class ToWorkspaceBlock(WorkspaceBlock):
 
         # Start with default list of ports
         self.ports = ToWorkspaceBlock.PORTS
+
+        # If no variable name is chosen, use a default variable name based on the blocks unique name
+        if len(variable_name) <= 0:
+            self.variable_name = f"simout_{self.unique_name}"    # TODO <<--- This needs to include subsystem name to make it more unique
 
         # Prefer values from parameters dictionary
         if isinstance(parameters, type(None)):
@@ -285,6 +292,9 @@ class ToWorkspaceBlock(WorkspaceBlock):
     @property
     def parameter(self) -> dict:
         return {'SampleTime': self.sample_time, 'VariableName': self.variable_name, 'SaveFormat': self.save_format}
+
+    def set_unique_variable_name(self, subsys_id: id, component_unique_name: str) -> None:
+        self.variable_name = f"simout_subsys_{subsys_id}_{component_unique_name}"
 
 
 # Port

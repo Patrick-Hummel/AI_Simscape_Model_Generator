@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 01.02.2024
+Last modification: 25.02.2024
 """
 
 __version__ = "2"
@@ -26,7 +26,8 @@ from config.gobal_constants import MATLAB_DEFAULT_SOLVER, MATLAB_DEFAULT_STOP_TI
 from src.model.components import ComponentBlock, SignalBlock, PortBlock, ResistorBlock, VaristorBlock, DiodeBlock, \
     InductorBlock, VariableInductorBlock, \
     CapacitorBlock, VariableCapacitorBlock, ConnectionPortBlock, FromWorkspaceBlock, VoltageSensorBlock, \
-    CurrentSensorBlock, PSSimuConvBlock, ToWorkspaceBlock, ScopeBlock, SimuPSConvBlock
+    CurrentSensorBlock, PSSimuConvBlock, ToWorkspaceBlock, ScopeBlock, SimuPSConvBlock, SensorBlock, VoterBlock, \
+    MuxBlock, ComparatorBlock, ConstantBlock, CommonSwitchBlock, UnitDelayBlock, SparingBlock
 
 
 class Connection:
@@ -387,7 +388,7 @@ class Subsystem(Container):
         return result
 
     def add_sensor_between(self, first_comp, first_port: str, second_comp, second_port: str,
-                           sensor_type: str = "Voltage", include_scope: bool = True):
+                           sensor_type: str = "Voltage", include_scope: bool = True) -> SensorBlock:
         """
         This method will add a VoltageSensor block or a CurrentSensor block between the specified components (and ports).
         Additionally, a ToWorkspace block and PS-Simulink Converter block is added to turn the output signal of the
@@ -415,8 +416,8 @@ class Subsystem(Container):
         comp_ps_simu_conv = PSSimuConvBlock()
         self.add_component(comp_ps_simu_conv)
 
-        workspace_variable_unique_name = f"Subsystem_{self.id}_{comp_sensor.unique_name}_simout_0"
-        comp_to_workspace = ToWorkspaceBlock(variable_name=workspace_variable_unique_name, sample_time=0)
+        comp_to_workspace = ToWorkspaceBlock(sample_time=0)
+        comp_to_workspace.set_unique_variable_name(subsys_id=self.id, component_unique_name=comp_sensor.unique_name)
         self.add_component(comp_to_workspace)
 
         # Signal from sensor to workspace and scope (optionally) via converter
@@ -439,8 +440,8 @@ class Subsystem(Container):
             self.add_connection(conn_signal_3)
 
         # Connect sensor to first and second component
-        conn_1 = Connection(from_block=comp_sensor, from_port=comp_sensor.ports[2],
-                            to_block=first_comp, to_port=first_port)
+        conn_1 = Connection(from_block=first_comp, from_port=first_port,
+                            to_block=comp_sensor, to_port=comp_sensor.ports[2])
 
         self.add_connection(conn_1)
 
@@ -448,6 +449,388 @@ class Subsystem(Container):
                             to_block=second_comp, to_port=second_port)
 
         self.add_connection(conn_2)
+
+        return comp_sensor
+
+    def add_multiple_sensors_like_existing_sensor(self, existing_sensor: SensorBlock, count: int) -> List[SensorBlock]:
+
+        if isinstance(existing_sensor, CurrentSensorBlock):
+            sensor_type = "Current"
+        elif isinstance(existing_sensor, VoltageSensorBlock):
+            sensor_type = "Voltage"
+        else:
+            raise ValueError(f"Unknown sensor type {type(existing_sensor)}")
+
+        other_from_block = None
+        other_from_port = None
+        other_to_block = None
+        other_to_port = None
+
+        new_sensors_list = []
+
+        for conn in self.connection_list:
+
+            if (conn.from_block.unique_name == existing_sensor.unique_name) and (
+                    not isinstance(conn.to_block, PSSimuConvBlock)):
+                other_to_block = conn.to_block
+                other_to_port = conn.to_port
+
+            if conn.to_block.unique_name == existing_sensor.unique_name:
+                other_from_block = conn.from_block
+                other_from_port = conn.from_port
+
+            if other_from_block and other_from_port and other_to_block and other_to_port:
+                break
+
+        for x in range(0, count):
+
+            # TODO Current sensors must be in series
+            # Add voltage sensor at same ports as existing sensor (in parallel)
+            new_sensor = self.add_sensor_between(first_comp=other_from_block, first_port=other_from_port,
+                                                 second_comp=other_to_block, second_port=other_to_port,
+                                                 sensor_type=sensor_type, include_scope=False)
+
+            new_sensors_list.append(new_sensor)
+
+        return new_sensors_list
+
+    def add_all_sensor_pssimuconv_to_block(self, sensor_list: List, target_block: ComponentBlock):
+
+        port_index = 0
+
+        for sens in sensor_list:
+
+            for conn in self.connection_list:
+
+                if conn.from_block.unique_name == sens.unique_name and isinstance(conn.to_block, PSSimuConvBlock):
+
+                    conn_signal_2 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                               to_block=target_block, to_port=target_block.ports[port_index])
+                    self.add_connection(conn_signal_2)
+
+                    port_index += 1
+
+                    break
+
+    def add_comparator_block_and_connections(self, sensors_list: List):
+
+        # Add comparator block and new to workspace block
+        comparator_block = ComparatorBlock()
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=comparator_block.unique_name)
+
+        self.add_component(comparator_block, to_workspace_block)
+
+        # Signal from comparator to workspace
+        conn_signal_1 = Connection(from_block=comparator_block, from_port=comparator_block.ports[2],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        # Add output connections from PSSimuConv blocks to the target block inputs
+        self.add_all_sensor_pssimuconv_to_block(sensor_list=sensors_list, target_block=comparator_block)
+
+        self.check_connections()
+
+    def add_voter_block_and_connections(self, sensors_list: List):
+
+        # Add comparator block and new to workspace block
+        voter_block = VoterBlock()
+        mux_block = MuxBlock()
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=mux_block.unique_name)
+
+        mux_block.set_input(len(sensors_list))
+        self.add_component(voter_block, mux_block, to_workspace_block)
+
+        # Signal from mux to voter
+        conn_signal_1 = Connection(from_block=mux_block, from_port=mux_block.ports[-1],
+                                   to_block=voter_block, to_port=voter_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        # Signal from voter to workspace
+        conn_signal_2 = Connection(from_block=voter_block, from_port=voter_block.ports[1],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_2)
+
+        # Add output connections from PSSimuConv blocks to the target block inputs
+        self.add_all_sensor_pssimuconv_to_block(sensor_list=sensors_list, target_block=mux_block)
+
+        self.check_connections()
+
+    def add_c_and_v_pattern(self, sensors_list: List):
+
+        # Add comparator block and new to workspace block
+        voter_block = VoterBlock()
+        mux_block = MuxBlock()
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=mux_block.unique_name)
+
+        mux_block.set_input(len(sensors_list))
+        self.add_component(voter_block, mux_block, to_workspace_block)
+
+        # Signal from mux to voter
+        conn_signal_1 = Connection(from_block=mux_block, from_port=mux_block.ports[-1],
+                                   to_block=voter_block, to_port=voter_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        # Signal from voter to workspace
+        conn_signal_2 = Connection(from_block=voter_block, from_port=voter_block.ports[1],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_2)
+
+        signal_block = ConstantBlock()
+        signal_block.value = 'nan'
+        self.add_component(signal_block)
+
+        new_list = [[sensors_list[i], sensors_list[i + 1]] for i in range(0, len(sensors_list), 2)]
+
+        for i, new_pair in enumerate(new_list):
+
+            comparator_block = ComparatorBlock()
+            common_switch_block = CommonSwitchBlock()
+
+            self.add_component(comparator_block, common_switch_block)
+
+            # Signal from comparator to common switch block
+            conn_signal_1 = Connection(from_block=comparator_block, from_port=comparator_block.ports[2],
+                                       to_block=common_switch_block, to_port=common_switch_block.ports[1])
+            self.add_connection(conn_signal_1)
+
+            conn_signal_2 = Connection(from_block=signal_block, from_port=signal_block.ports[0],
+                                       to_block=common_switch_block, to_port=common_switch_block.ports[2])
+            self.add_connection(conn_signal_2)
+
+            conn_signal_3 = Connection(from_block=common_switch_block, from_port=common_switch_block.ports[-1],
+                                       to_block=mux_block, to_port=mux_block.ports[i])
+            self.add_connection(conn_signal_3)
+
+            for n, new_sensor in enumerate(new_pair):
+
+                for conn in self.connection_list:
+
+                    if conn.from_block.unique_name == new_sensor.unique_name and isinstance(conn.to_block,
+                                                                                            PSSimuConvBlock):
+                        conn_signal_4 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                                   to_block=comparator_block, to_port=comparator_block.ports[n])
+                        self.add_connection(conn_signal_4)
+
+                        if n == 0:
+                            conn_signal_5 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                                       to_block=common_switch_block,
+                                                       to_port=common_switch_block.ports[0])
+                            self.add_connection(conn_signal_5)
+
+                        break
+
+        self.check_connections()
+
+    def add_v_and_c_pattern(self, sensors_list: List):
+
+        # Add voter block and new to workspace block
+        voter_block = VoterBlock()
+        mux_block = MuxBlock()
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=mux_block.unique_name)
+        unit_delay_out_block = UnitDelayBlock()
+
+        mux_block.set_input(len(sensors_list))
+        self.add_component(voter_block, mux_block, to_workspace_block, unit_delay_out_block)
+
+        # Signal from mux to voter
+        conn_signal_1 = Connection(from_block=mux_block, from_port=mux_block.ports[-1],
+                                   to_block=voter_block, to_port=voter_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        # Signal from voter to workspace
+        conn_signal_2 = Connection(from_block=voter_block, from_port=voter_block.ports[1],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_2)
+
+        # Signal from voter to workspace
+        conn_signal_3 = Connection(from_block=voter_block, from_port=voter_block.ports[1],
+                                   to_block=unit_delay_out_block, to_port=unit_delay_out_block.ports[0])
+        self.add_connection(conn_signal_3)
+
+        signal_block = ConstantBlock()
+        signal_block.value = 'nan'
+        self.add_component(signal_block)
+
+        for i, new_sensor in enumerate(sensors_list):
+
+            comparator_block = ComparatorBlock()
+            common_switch_block = CommonSwitchBlock()
+            unit_delay_block = UnitDelayBlock()
+
+            self.add_component(comparator_block, common_switch_block, unit_delay_block)
+
+            # Signal from comparator to common switch block
+            conn_signal_1 = Connection(from_block=comparator_block, from_port=comparator_block.ports[2],
+                                       to_block=common_switch_block, to_port=common_switch_block.ports[1])
+            self.add_connection(conn_signal_1)
+
+            conn_signal_2 = Connection(from_block=signal_block, from_port=signal_block.ports[0],
+                                       to_block=common_switch_block, to_port=common_switch_block.ports[2])
+            self.add_connection(conn_signal_2)
+
+            conn_signal_3 = Connection(from_block=common_switch_block,
+                                       from_port=common_switch_block.ports[-1],
+                                       to_block=mux_block, to_port=mux_block.ports[i])
+            self.add_connection(conn_signal_3)
+
+            for conn in self.connection_list:
+
+                if conn.from_block.unique_name == new_sensor.unique_name and isinstance(conn.to_block,
+                                                                                        PSSimuConvBlock):
+                    conn_signal_4 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                               to_block=common_switch_block, to_port=common_switch_block.ports[0])
+                    self.add_connection(conn_signal_4)
+
+                    conn_signal_5 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                               to_block=unit_delay_block, to_port=unit_delay_block.ports[0])
+                    self.add_connection(conn_signal_5)
+
+                    break
+
+            conn_signal_6 = Connection(from_block=unit_delay_block, from_port=unit_delay_block.ports[1],
+                                       to_block=comparator_block, to_port=comparator_block.ports[0])
+            self.add_connection(conn_signal_6)
+
+            conn_signal_7 = Connection(from_block=unit_delay_out_block, from_port=unit_delay_out_block.ports[1],
+                                       to_block=comparator_block, to_port=comparator_block.ports[1])
+            self.add_connection(conn_signal_7)
+
+    def add_c_and_s_pattern(self, sensors_list: List):
+
+        mux_block = MuxBlock()
+        mux_signal_block = MuxBlock()
+        sparing_block = SparingBlock()
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=mux_block.unique_name)
+
+        mux_signal_block.set_input(int(len(sensors_list) / 2))
+        mux_block.set_input(int(len(sensors_list) / 2))
+
+        self.add_component(mux_block, mux_signal_block, to_workspace_block, sparing_block)
+
+        # Signal from voter to workspace
+        conn_signal_1 = Connection(from_block=sparing_block, from_port=sparing_block.ports[2],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        conn_signal_2 = Connection(from_block=mux_signal_block, from_port=mux_signal_block.ports[-1],
+                                   to_block=sparing_block, to_port=sparing_block.ports[0])
+        self.add_connection(conn_signal_2)
+
+        conn_signal_3 = Connection(from_block=mux_block, from_port=mux_block.ports[-1],
+                                   to_block=sparing_block, to_port=sparing_block.ports[1])
+        self.add_connection(conn_signal_3)
+
+        new_list = [[sensors_list[i], sensors_list[i + 1]] for i in range(0, len(sensors_list), 2)]
+
+        for i, new_pair in enumerate(new_list):
+
+            comparator_block = ComparatorBlock()
+            self.add_component(comparator_block)
+
+            conn_signal_4 = Connection(from_block=comparator_block, from_port=comparator_block.ports[-1],
+                                       to_block=mux_block, to_port=mux_block.ports[i])
+            self.add_connection(conn_signal_4)
+
+            for n, new_sensor in enumerate(new_pair):
+
+                for conn in self.connection_list:
+
+                    if conn.from_block.unique_name == new_sensor.unique_name and isinstance(conn.to_block,
+                                                                                            PSSimuConvBlock):
+                        conn_signal_5 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                                   to_block=comparator_block, to_port=comparator_block.ports[n])
+                        self.add_connection(conn_signal_5)
+
+                        if n == 0:
+                            conn_signal_6 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                                       to_block=mux_signal_block, to_port=mux_signal_block.ports[i])
+                            self.add_connection(conn_signal_6)
+
+                        break
+
+    def add_v_and_c_and_s_pattern(self, sensors_list: List, odd_integer: int):
+
+        mux_signal_block = MuxBlock()
+        mux_error_block = MuxBlock()
+
+        sparing_block = SparingBlock()
+        sparing_block.n = odd_integer
+
+        voter_block = VoterBlock()
+
+        delay_out_block = UnitDelayBlock()
+
+        to_workspace_block = ToWorkspaceBlock()
+        to_workspace_block.set_unique_variable_name(subsys_id=self.id, component_unique_name=voter_block.unique_name)
+
+        mux_signal_block.set_input(len(sensors_list))
+        mux_error_block.set_input(len(sensors_list))
+
+        self.add_component(mux_signal_block, mux_error_block, voter_block, sparing_block, delay_out_block, to_workspace_block)
+
+        # Signal from voter to workspace
+        conn_signal_1 = Connection(from_block=voter_block, from_port=voter_block.ports[2],
+                                   to_block=to_workspace_block, to_port=to_workspace_block.ports[0])
+        self.add_connection(conn_signal_1)
+
+        # Signal from voter to delay out
+        conn_signal_2 = Connection(from_block=voter_block, from_port=voter_block.ports[2],
+                                   to_block=delay_out_block, to_port=delay_out_block.ports[0])
+        self.add_connection(conn_signal_2)
+
+        # Signal from sparing to voter
+        conn_signal_3 = Connection(from_block=sparing_block, from_port=sparing_block.ports[-1],
+                                   to_block=voter_block, to_port=voter_block.ports[0])
+        self.add_connection(conn_signal_3)
+
+        # Signal from mux signal to sparing
+        conn_signal_4 = Connection(from_block=mux_signal_block, from_port=mux_signal_block.ports[-1],
+                                   to_block=sparing_block, to_port=sparing_block.ports[0])
+        self.add_connection(conn_signal_4)
+
+        # Signal from mux error to sparing
+        conn_signal_5 = Connection(from_block=mux_error_block, from_port=mux_error_block.ports[-1],
+                                   to_block=sparing_block, to_port=sparing_block.ports[1])
+        self.add_connection(conn_signal_5)
+
+        for i, new_sensor in enumerate(sensors_list):
+
+            comparator_block = ComparatorBlock()
+            unit_delay_block = UnitDelayBlock()
+
+            self.add_component(comparator_block, unit_delay_block)
+
+            # Signal from mux error to sparing
+            conn_signal_5 = Connection(from_block=comparator_block, from_port=comparator_block.ports[-1],
+                                       to_block=mux_error_block, to_port=mux_error_block.ports[i])
+            self.add_connection(conn_signal_5)
+
+            for conn in self.connection_list:
+
+                if conn.from_block.unique_name == new_sensor.unique_name and isinstance(conn.to_block,
+                                                                                        PSSimuConvBlock):
+                    conn_signal_6 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                               to_block=mux_signal_block, to_port=mux_signal_block.ports[i])
+                    self.add_connection(conn_signal_6)
+
+                    conn_signal_7 = Connection(from_block=conn.to_block, from_port=conn.to_block.ports[1],
+                                               to_block=unit_delay_block, to_port=unit_delay_block.ports[0])
+                    self.add_connection(conn_signal_7)
+
+                    conn_signal_8 = Connection(from_block=unit_delay_block, from_port=unit_delay_block.ports[-1],
+                                               to_block=comparator_block, to_port=comparator_block.ports[0])
+                    self.add_connection(conn_signal_8)
+
+                    conn_signal_8 = Connection(from_block=delay_out_block, from_port=delay_out_block.ports[-1],
+                                               to_block=comparator_block, to_port=comparator_block.ports[1])
+                    self.add_connection(conn_signal_8)
+
+                    break
 
     def add_signal_from_workspace(self, component, signal_port: str):
         """

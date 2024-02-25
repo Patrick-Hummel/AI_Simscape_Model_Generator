@@ -3,7 +3,7 @@
 """
 Prompt Generator
 
-Last modification: 01.02.2024
+Last modification: 25.02.2024
 """
 
 __version__ = "1"
@@ -25,10 +25,15 @@ from src.language_model_enum import LLModel
 from src.model.response import ResponseData
 from src.tools.custom_errors import AbstractComponentError, AbstractConnectionError
 
+DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH = PATH_DEFAULT_RESPONSES_DIR / "api_call_20240208_1858/response_20240208_1858.json"
+
 
 class PromptGenerator:
 
-    def __init__(self):
+    def __init__(self, offline_mode: bool = False):
+
+        self.offline_mode = offline_mode
+
         self.system_modeling_instructions = ""
         self.json_response_instructions = ""
 
@@ -116,10 +121,15 @@ class PromptGenerator:
                         "its components and their connections from following user requirements "
                         "specification: " + usr)
 
-        # Send generated prompt as request
-        response_data = prompt_request_factory.request(final_prompt, llm_model)
+        if self.offline_mode:
 
+            response_data = ResponseData(response_str="No summary - Offline mode active...",
+                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
 
+        else:
+
+            # Send generated prompt as request
+            response_data = prompt_request_factory.request(final_prompt, llm_model)
 
         return final_prompt, response_data
 
@@ -140,11 +150,21 @@ class PromptGenerator:
 
         final_prompt = instructions_preface + prompt + self.system_modeling_instructions + self.json_response_instructions
 
-        # Send generated prompt as request
-        response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+        if self.offline_mode:
 
-        if save_to_disk:
-            self._save_prompt_and_response_to_disk(final_prompt, response_data.response_str)
+            with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
+                response: str = file.read()
+
+            response_data = ResponseData(response_str=response,
+                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+
+        else:
+
+            # Send generated prompt as request
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+
+            if save_to_disk:
+                self._save_prompt_and_response_to_disk(final_prompt, response_data.response_str)
 
         return final_prompt, response_data
 
@@ -156,8 +176,18 @@ class PromptGenerator:
                         + " Improve this model and the json using the following instructions: "
                         + feedback)
 
-        # Send generated prompt as request
-        response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+        if self.offline_mode:
+
+            with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
+                response: str = file.read()
+
+            response_data = ResponseData(response_str=response,
+                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+
+        else:
+
+            # Send generated prompt as request
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
 
         return final_prompt, response_data
 
@@ -183,8 +213,18 @@ class PromptGenerator:
                         + " Improve this model and the json using the following instructions: "
                         + auto_correct_instruction)
 
-        # Send generated prompt as request
-        response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+        if self.offline_mode:
+
+            with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
+                response: str = file.read()
+
+            response_data = ResponseData(response_str=response,
+                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+
+        else:
+
+            # Send generated prompt as request
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
 
         return final_prompt, response_data
 
@@ -198,7 +238,17 @@ class PromptGenerator:
                           "Is each component connected to at least two other components? Fix any errors. "
                         + self.system_modeling_instructions)
 
-        # Send generated prompt as request
-        response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+        if self.offline_mode:
+
+            with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
+                response: str = file.read()
+
+            response_data = ResponseData(response_str=response,
+                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+
+        else:
+
+            # Send generated prompt as request
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
 
         return final_prompt, response_data

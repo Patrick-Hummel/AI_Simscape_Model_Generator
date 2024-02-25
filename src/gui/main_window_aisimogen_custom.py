@@ -3,7 +3,7 @@
 """
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 01.02.2024
+Last modification: 25.02.2024
 """
 
 __version__ = "1"
@@ -13,6 +13,7 @@ import copy
 import json
 import threading
 import locale
+import time
 from datetime import datetime
 from typing import Any, Callable
 
@@ -29,7 +30,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-from config.gobal_constants import PATH_DEFAULT_RESPONSES_DIR, PATH_EXAMPLE_USER_SPECIFICATION, \
+from config.gobal_constants import PATH_EXAMPLE_USER_SPECIFICATION, \
     OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K, OPENAI_GPT35_TURBO_OUTPUT_TOKENS_COST_USD_PER_1K
 
 from src.abstract_model.abstract_system import AbstractSystem
@@ -38,6 +39,9 @@ from src.language_model_enum import LLModel
 from src.gui.percentage_worker import PercentageWorker
 from src.gui.main_window_aisimogen_generated import Ui_MainWindow
 from src.model.components import ComponentBlock
+from src.model_upgrader import BasicUpgrader, SingleUpgrader, CombineUpgrader, SINGLE_UPGRADER_COMPARATOR_PATTERN, \
+    SINGLE_UPGRADER_VOTER_PATTERN, COMBINED_UPGRADER_C_AND_V_PATTERN, COMBINED_UPGRADER_V_AND_C_PATTERN, \
+    COMBINED_UPGRADER_C_AND_S_PATTERN, COMBINED_UPGRADER_V_AND_C_AND_S_PATTERN
 from src.model.response import ResponseData
 from src.model.system import System, Subsystem, Connection
 from src.prompt_generator import PromptGenerator
@@ -77,7 +81,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.last_json_response_str = ""
 
         self.current_model = LLModel.OPENAI_GPT35_Turbo
-        self.prompt_generator = PromptGenerator()
+        self.prompt_generator = PromptGenerator(offline_mode=True)
 
         self.implemented_component_block_types_dict = ComponentBlock.get_implemented_component_types_dict()
         self.implemented_default_subsystem_dict = Subsystem.get_implemented_default_subsystems_dict()
@@ -100,6 +104,8 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.detailed_system_components_subsystems_list = []
         self.detailed_model_deletion_selection = ""
+
+        self.offline_mode = True
 
     def setupUi(self, MainWindow):
         super().setupUi(MainWindow)
@@ -134,6 +140,9 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.pushButton_detailed_model_add_subsystem.clicked.connect(self.on_click_add_detailed_model_subsystem)
         self.pushButton_detailed_model_add_connection.clicked.connect(self.on_click_add_detailed_model_connection)
         self.pushButton_detailed_model_delete_selection.clicked.connect(self.on_click_delete_selection_from_detailed_model)
+        self.pushButton_upgrade_detailed_model.clicked.connect(self.on_click_upgrade_detailed_model)
+        self.pushButton_single_upgrader.clicked.connect(self.on_click_single_upgrade_detailed_model)
+        self.pushButton_combined_upgrader.clicked.connect(self.on_click_combined_upgrade_detailed_model)
         self.pushButton_build_simscape_model.clicked.connect(self.on_click_build_simscape_model)
 
         self.action_undo_change_to_abstract_model.triggered.connect(self.on_action_undo_abstract_model)
@@ -143,6 +152,12 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.action_undo_change_to_abstract_model.setEnabled(False)
         self.action_undo_change_to_detailed_model.setEnabled(False)
+
+        self.comboBox_single_upgrader_pattern.addItems([SINGLE_UPGRADER_COMPARATOR_PATTERN, SINGLE_UPGRADER_VOTER_PATTERN])
+        self.comboBox_combined_upgrader_pattern.addItems([COMBINED_UPGRADER_C_AND_V_PATTERN,
+                                                          COMBINED_UPGRADER_V_AND_C_PATTERN,
+                                                          COMBINED_UPGRADER_C_AND_S_PATTERN,
+                                                          COMBINED_UPGRADER_V_AND_C_AND_S_PATTERN])
 
         with open(PATH_EXAMPLE_USER_SPECIFICATION, 'r') as file:
             example_user_specification_str = file.read()
@@ -664,6 +679,34 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         # State machine transition
         self.state_machine.set_state(State.SIMSCAPE_MODEL_GENERATED)
 
+    def on_click_upgrade_detailed_model(self):
+
+        self.tabWidget_main.setCurrentIndex(3)
+
+    def on_click_single_upgrade_detailed_model(self):
+
+        selected_upgrade_pattern = self.comboBox_single_upgrader_pattern.currentText()
+        selected_upgrade_target = int(self.spinBox_upgrader_target.value())
+
+        up = BasicUpgrader(self.detailed_system_model)
+
+        sigup = SingleUpgrader(up)
+        sigup.upgrade(pattern_name=selected_upgrade_pattern, subsystem_unique_name='LampMissionSubsystem_3', target=selected_upgrade_target)
+
+        self.on_update_detailed_system_model_created()
+
+    def on_click_combined_upgrade_detailed_model(self):
+
+        selected_upgrade_pattern = self.comboBox_combined_upgrader_pattern.currentText()
+        selected_upgrade_target = int(self.spinBox_upgrader_target.value())
+
+        up = BasicUpgrader(self.detailed_system_model)
+
+        comup = CombineUpgrader(up)
+        comup.upgrade(pattern_name=selected_upgrade_pattern, subsystem_unique_name='LampMissionSubsystem_3', target=selected_upgrade_target)
+
+        self.on_update_detailed_system_model_created()
+
     def on_click_build_simscape_model(self):
 
         # Communicate progress across different threads using a worker
@@ -680,6 +723,8 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         simulink_implementer = Implementer(SystemSimulinkAdapter)
         simulink_implementer.input_to_simulink(self.detailed_system_model, self.detailed_system_model.name, self.pos_detailed_model)
         simulink_implementer.save_to_disk(self.detailed_system_model.name)
+
+        time.sleep(30)
 
         worker.percentage = 100
         worker.text = "Done."
@@ -706,7 +751,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.canvas_abstract.draw()
 
-    def create_detailed_model_network_graph_plot(self):
+    def create_detailed_model_network_graph_plot(self, keep_previous_pos: bool = False):
 
         # Clear plot first
         self.ax_detailed.cla()
@@ -720,11 +765,22 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         else:
             self.label_not_connected_warning.setVisible(True)
 
-        # Position nodes (different layouts possible)
-        self.pos_detailed_model = nx.spring_layout(self.graph_detailed_model)
+        if not keep_previous_pos or len(self.pos_detailed_model) <= 0:
+
+            # Position nodes (different layouts possible)
+            self.pos_detailed_model = nx.spring_layout(self.graph_detailed_model)
+
+        color_map = []
+
+        for n in self.graph_detailed_model.nodes():
+            if n == self.detailed_model_deletion_selection:
+                color_map.append('orange')
+            else:
+                color_map.append('skyblue')
 
         # Plot the graph on the subplot
-        nx.draw(self.graph_detailed_model, self.pos_detailed_model, with_labels=True, font_weight='bold', ax=self.ax_detailed)  # node_size=700, node_color='skyblue'
+        nx.draw(self.graph_detailed_model, self.pos_detailed_model, with_labels=True, font_weight='bold', font_size=10,
+                ax=self.ax_detailed, node_color=color_map)  # node_size=700, node_color='skyblue'
 
         # self.ax_node_profile.autoscale()
         self.fig_detailed.tight_layout()
@@ -749,6 +805,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 elif event.button == 2:
                     self.detailed_model_deletion_selection = node_clicked
                     self.label_detailed_model_deletion_selection.setText(node_clicked)
+                    self.create_detailed_model_network_graph_plot(keep_previous_pos=True)
                 elif event.button == 3:
                     self.comboBox_add_connection_to.setCurrentIndex(node_clicked_index)
 

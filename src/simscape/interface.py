@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 01.02.2024
+Last modification: 25.02.2024
 """
 
 __version__ = "2"
@@ -286,6 +286,9 @@ class SystemSimulinkAdapter(SimulinkInterface):
                     handle_to = handle_to[port_name][0][int(port_nr) - 1]
 
             eng.add_line(model_name, handle_from, handle_to, 'autorouting', 'on', nargout=0)
+
+        # Run custom matlab script to reroute all lines (improves line quality, avoids overlap with other lines)
+        eng.matlab_route_line(nargout=0)
 
     def change_parameter(self, eng, model_name, parameter_name, parameter_value, component_name, component_id,
                          subsystem_type=None, subsystem_id=None):

@@ -3,7 +3,7 @@
 """
 State machine
 
-Last modification: 01.02.2024
+Last modification: 25.02.2024
 """
 
 __version__ = "1"
@@ -150,6 +150,7 @@ class StateMachine:
             self.window.pushButton_detailed_model_add_component.setEnabled(True)
             self.window.pushButton_detailed_model_add_subsystem.setEnabled(True)
             self.window.pushButton_detailed_model_add_connection.setEnabled(True)
+            self.window.pushButton_upgrade_detailed_model.setEnabled(True)
             self.window.pushButton_build_simscape_model.setEnabled(True)
 
         elif new_state == State.SIMSCAPE_MODEL_GENERATED:
