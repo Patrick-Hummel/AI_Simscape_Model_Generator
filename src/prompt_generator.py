@@ -3,7 +3,7 @@
 """
 Prompt Generator
 
-Last modification: 25.02.2024
+Last modification: 27.02.2024
 """
 
 __version__ = "1"
@@ -30,9 +30,10 @@ DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH = PATH_DEFAULT_RESPONSES_DIR / "api_call_20
 
 class PromptGenerator:
 
-    def __init__(self, offline_mode: bool = False):
+    def __init__(self, offline_mode: bool = False, temperature: float = 1.0):
 
         self.offline_mode = offline_mode
+        self._temperature = temperature
 
         self.system_modeling_instructions = ""
         self.json_response_instructions = ""
@@ -41,6 +42,21 @@ class PromptGenerator:
 
         self._create_system_modeling_instructions()
         self._create_json_response_instructions()
+
+    @property
+    def temperature(self) -> float:
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, value: float):
+
+        # Temperature must be between 0.0 and 2.0
+        if float(value) < 0.0:
+            self._temperature = 0.0
+        elif float(value) > 2.0:
+            self._temperature = 2.0
+        else:
+            self._temperature = float(value)
 
     def _create_system_modeling_instructions(self):
 
@@ -110,7 +126,7 @@ class PromptGenerator:
     def generate_prompt_custom(self, text: str, llm_model: LLModel) -> (str, ResponseData):
 
         # Send generated prompt as request
-        response_data = prompt_request_factory.request(text, llm_model)
+        response_data = prompt_request_factory.request(text, llm_model, self._temperature)
 
         return text, response_data
 
@@ -129,7 +145,7 @@ class PromptGenerator:
         else:
 
             # Send generated prompt as request
-            response_data = prompt_request_factory.request(final_prompt, llm_model)
+            response_data = prompt_request_factory.request(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data
 
@@ -161,7 +177,7 @@ class PromptGenerator:
         else:
 
             # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
 
             if save_to_disk:
                 self._save_prompt_and_response_to_disk(final_prompt, response_data.response_str)
@@ -187,7 +203,7 @@ class PromptGenerator:
         else:
 
             # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data
 
@@ -224,7 +240,7 @@ class PromptGenerator:
         else:
 
             # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data
 
@@ -249,6 +265,6 @@ class PromptGenerator:
         else:
 
             # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model)
+            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data

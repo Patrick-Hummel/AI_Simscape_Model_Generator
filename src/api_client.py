@@ -37,7 +37,7 @@ class OpenAIGPTClient(metaclass=Singleton):
 
     def __init__(self):
         self.client = OpenAI()
-        print("Newly created!")
+        print("-> OpenAI API client created")
 
         # Load JSON schema and prepare to be added to function call parameter
         with open(PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE, 'r') as file:
@@ -45,7 +45,7 @@ class OpenAIGPTClient(metaclass=Singleton):
 
         self.json_response_schema.pop('$schema', None)
 
-    def request(self, prompt: str) -> ResponseData:
+    def request(self, prompt: str, temperature: float = 1.0) -> ResponseData:
 
         start_time = time()
 
@@ -53,6 +53,7 @@ class OpenAIGPTClient(metaclass=Singleton):
         completion = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             # response_format={"type": "json_object"},
+            temperature=temperature,
             messages=[
                 {"role": "system",
                  "content": "You are a helpful assistant."},
@@ -71,7 +72,7 @@ class OpenAIGPTClient(metaclass=Singleton):
 
         return response_data
 
-    def request_as_function_call(self, prompt: str) -> ResponseData:
+    def request_as_function_call(self, prompt: str, temperature: float = 1.0) -> ResponseData:
 
         start_time = time()
 
@@ -82,13 +83,17 @@ class OpenAIGPTClient(metaclass=Singleton):
             messages=[
                 {"role": "user", "content": prompt}
             ],
+            temperature=temperature,
             functions=[
                 {
-                    "name": "createElectricalCircuitObject",
+                    "name": "createSystemModelObject",
                     "parameters": self.json_response_schema
                 }
             ],
-            function_call={"name": "createElectricalCircuitObject"}
+            tool_choice={"type": "function", "function": {"name": "createSystemModelObject"}}
+
+            # Parameter 'function_call' is being deprecated (new: tool_choice)
+            # function_call={"name": "createSystemModelObject"}
         )
 
         print(f"Tokens (Response): Prompt = {completion.usage.prompt_tokens}, "
@@ -103,12 +108,12 @@ class OpenAIGPTClient(metaclass=Singleton):
         return response_data
 
 
-class GoogleBardClient(metaclass=Singleton):
+class GoogleGeminiClient(metaclass=Singleton):
 
     def __init__(self):
         pass
         # self.client = Bard(token="")
         # print("Newly created!")
 
-    def request(self, prompt: str):
+    def request(self, prompt: str, temperature: float = 1.0):
         raise NotImplementedError

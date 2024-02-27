@@ -3,7 +3,7 @@
 """
 Definition large language models that may be used to generate abstract system models.
 
-Last modification: 01.02.2024
+Last modification: 27.02.2024
 """
 
 __version__ = "1"
@@ -16,7 +16,7 @@ class LLModel(Enum):
     OPENAI_GPT35_Turbo = auto()
     OPENAI_GPT4_Turbo = auto()
     OPENAI_GPT4 = auto()
-    GOOGLE_BARD = auto()
+    GOOGLE_GEMINI = auto()
     ANTHROPIC_CLAUDE2 = auto()
     ALEPH_ALPHA_LUMINOUS = auto()
     META_LLAMA2 = auto()

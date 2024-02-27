@@ -3,7 +3,7 @@
 """
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 25.02.2024
+Last modification: 27.02.2024
 """
 
 __version__ = "1"
@@ -54,11 +54,10 @@ from src.tools.state_machine import StateMachine, State
 
 locale.setlocale(locale.LC_ALL, '')
 
-# Temporary to reuse old responses
-SEND_NEW_REQUEST = True
-
 PROMPT_HIST_TYPE_PROMPT = "PROMPT"
 PROMPT_HIST_TYPE_RESPONSE = "RESPONSE"
+
+DEFAULT_LLM_PROMPT_TEMPERATURE = 1.0
 
 
 class Ui_MainWindow_Custom(Ui_MainWindow):
@@ -81,7 +80,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.last_json_response_str = ""
 
         self.current_model = LLModel.OPENAI_GPT35_Turbo
-        self.prompt_generator = PromptGenerator(offline_mode=True)
+        self.prompt_generator = PromptGenerator(offline_mode=True, temperature=DEFAULT_LLM_PROMPT_TEMPERATURE)
 
         self.implemented_component_block_types_dict = ComponentBlock.get_implemented_component_types_dict()
         self.implemented_default_subsystem_dict = Subsystem.get_implemented_default_subsystems_dict()
@@ -164,6 +163,9 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.plainTextEdit_user_specification.setPlainText(example_user_specification_str)
 
+        self.doubleSpinBox_config_model_temperature.setValue(DEFAULT_LLM_PROMPT_TEMPERATURE)
+        self.doubleSpinBox_config_model_temperature.valueChanged.connect(self.on_value_changed_temperature_spinbox)
+
         # Create matplotlib plot within groupbox
         self.fig_abstract, self.ax_abstract, self.canvas_abstract = _create_matplotlib_figure_groupbox(
             self.groupBox_abstract_model_visualization)
@@ -183,6 +185,10 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
+
+    def on_value_changed_temperature_spinbox(self):
+        self.prompt_generator.temperature = self.doubleSpinBox_config_model_temperature.value()
+        print(f"Temperature set to: {self.prompt_generator.temperature}")
 
     def show_error_dialog(self, title: str, text: str, informative_text: str):
 

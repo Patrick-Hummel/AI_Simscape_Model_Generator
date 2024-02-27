@@ -729,25 +729,6 @@
          <string>Model Temperature:</string>
         </property>
        </widget>
-       <widget class="QSlider" name="horizontalSlider_config_model_temperature">
-        <property name="geometry">
-         <rect>
-          <x>230</x>
-          <y>60</y>
-          <width>160</width>
-          <height>22</height>
-         </rect>
-        </property>
-        <property name="maximum">
-         <number>200</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="tickPosition">
-         <enum>QSlider::TicksBelow</enum>
-        </property>
-       </widget>
        <widget class="QDoubleSpinBox" name="doubleSpinBox_config_model_temperature">
         <property name="geometry">
          <rect>
