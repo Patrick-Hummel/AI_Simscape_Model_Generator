@@ -40,7 +40,7 @@ class PromptGenerator:
 
         self._latest_specification_summary = ""
 
-        self._create_system_modeling_instructions()
+        self.create_system_modeling_instructions()
         self._create_json_response_instructions()
 
     @property
@@ -58,16 +58,18 @@ class PromptGenerator:
         else:
             self._temperature = float(value)
 
-    def _create_system_modeling_instructions(self):
+    def create_system_modeling_instructions(self, selected_abstract_component_types_dict: dict = None) -> None:
 
-        implemented_abstract_component_types_dict = AbstractComponent.get_implemented_component_types_dict()
+        # If no dictionary is provided, allow all implemented abstract component types
+        if selected_abstract_component_types_dict is None:
+            selected_abstract_component_types_dict = AbstractComponent.get_implemented_component_types_dict()
 
         instructions = "Only the following components may be used: "
 
-        for component in implemented_abstract_component_types_dict.keys():
+        for component in selected_abstract_component_types_dict.keys():
             instructions += f"{component}, "
 
-        self.system_modeling_instructions += instructions
+        self.system_modeling_instructions = instructions
 
     def _create_json_response_instructions(self):
 

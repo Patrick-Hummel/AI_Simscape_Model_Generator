@@ -21,7 +21,7 @@ import networkx as nx
 from shapely import LineString
 from shapely.geometry import Point
 
-from PyQt5.QtWidgets import QTreeWidgetItem, QGroupBox, QMessageBox
+from PyQt5.QtWidgets import QTreeWidgetItem, QGroupBox, QMessageBox, QScrollArea, QVBoxLayout, QCheckBox
 from PyQt5.QtWidgets import QWidget, QHBoxLayout
 from PyQt5 import QtCore
 
@@ -32,6 +32,7 @@ from matplotlib.figure import Figure
 
 from config.gobal_constants import PATH_EXAMPLE_USER_SPECIFICATION, \
     OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K, OPENAI_GPT35_TURBO_OUTPUT_TOKENS_COST_USD_PER_1K
+from src.abstract_model.abstract_components import AbstractComponent
 
 from src.abstract_model.abstract_system import AbstractSystem
 from src.language_model_enum import LLModel
@@ -82,6 +83,10 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.current_model = LLModel.OPENAI_GPT35_Turbo
         self.prompt_generator = PromptGenerator(offline_mode=True, temperature=DEFAULT_LLM_PROMPT_TEMPERATURE)
 
+        self.selection_abstract_component_checkbox_dict = {}
+        self.selected_abstract_component_types_dict = {}
+
+        self.implemented_abstract_component_types_dict = AbstractComponent.get_implemented_component_types_dict()
         self.implemented_component_block_types_dict = ComponentBlock.get_implemented_component_types_dict()
         self.implemented_default_subsystem_dict = Subsystem.get_implemented_default_subsystems_dict()
 
@@ -183,12 +188,44 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         # Temporary for debugging
         self.label_info_current_state.setText(self.state_machine.current_state.name)
 
+        # --- Build abstract component selection dynamically ---
+        # Create a widget to contain the checkboxes
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+
+        # Add checkboxes to the layout
+        for component_type in list(self.implemented_abstract_component_types_dict.keys()):
+            checkbox = QCheckBox(component_type)
+            checkbox.setChecked(True)
+            scroll_layout.addWidget(checkbox)
+            self.selection_abstract_component_checkbox_dict[component_type] = checkbox
+
+        # Set the layout of the scroll content
+        scroll_content.setLayout(scroll_layout)
+
+        # Set the scroll area widget
+        self.scrollArea_abstract_components_selection.setWidget(scroll_content)
+
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
 
     def on_value_changed_temperature_spinbox(self):
         self.prompt_generator.temperature = self.doubleSpinBox_config_model_temperature.value()
         print(f"Temperature set to: {self.prompt_generator.temperature}")
+
+    def update_selected_abstract_component_type(self):
+
+        self.selected_abstract_component_types_dict = {}
+
+        for checkbox in self.selection_abstract_component_checkbox_dict.keys():
+
+            if self.selection_abstract_component_checkbox_dict[checkbox].isChecked():
+                self.selected_abstract_component_types_dict[checkbox] = self.implemented_abstract_component_types_dict[checkbox]
+
+            else:
+                print(f"Not selected: {checkbox}")
+
+        self.prompt_generator.create_system_modeling_instructions(self.selected_abstract_component_types_dict)
 
     def show_error_dialog(self, title: str, text: str, informative_text: str):
 
@@ -487,6 +524,9 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         run_thread(self.create_abstract_system_model_runner, worker)
 
     def create_abstract_system_model_runner(self, worker: PercentageWorker):
+
+        # Update selected abstract components first
+        self.update_selected_abstract_component_type()
 
         specification_summary_str = self.plainTextEdit_specification_summary.toPlainText()
 
@@ -850,6 +890,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 return node1, node2
 
         return None
+
 
 def _create_matplotlib_figure_groupbox(groupbox: QGroupBox) -> (Figure, Any, FigureCanvas):
 

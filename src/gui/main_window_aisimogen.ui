@@ -748,6 +748,48 @@
          <double>1.000000000000000</double>
         </property>
        </widget>
+       <widget class="QScrollArea" name="scrollArea_abstract_components_selection">
+        <property name="geometry">
+         <rect>
+          <x>410</x>
+          <y>40</y>
+          <width>311</width>
+          <height>541</height>
+         </rect>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>309</width>
+           <height>539</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QLabel" name="label_abstract_components_selection">
+        <property name="geometry">
+         <rect>
+          <x>410</x>
+          <y>20</y>
+          <width>241</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Selection of abstract components:</string>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="tab_prompt_history">
        <attribute name="title">
