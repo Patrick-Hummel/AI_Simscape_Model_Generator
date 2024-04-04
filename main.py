@@ -3,7 +3,7 @@
 """
 Main module of the AI Simscape Model Generator.
 
-Last modification: 01.02.2024
+Last modification: 04.04.2024
 """
 
 __version__ = "1"
@@ -24,34 +24,21 @@ from src.response_interpreter import ResponseInterpreter
 from src.simscape.interface import Implementer, SystemSimulinkAdapter
 from src.system_builder import SystemBuilder
 
-# Temporary to reuse old responses
-SEND_NEW_REQUEST = False
-
 
 def main():
 
-    # 1) Generate prompt
+    system_description = "Create a circuit with a battery, two lamps and two switches. Each lamp may be controlled by one switch."
+
+    # 1) Generate prompt & send via request factory
     prompt_generator = PromptGenerator()
-    prompt = prompt_generator.generate_prompt_create_abstract_model("Create a circuit with a battery, two lamps and two switches. "
-                                              "Each lamp may be controlled by one switch.")
-
-    # 2) Send prompt to LLM and await response
-    if SEND_NEW_REQUEST:
-
-        print("Sending new request...")
-        response = prompt_request_factory.request_as_function_call(prompt, LLModel.OPENAI_GPT35_Turbo)
-
-    else:
-
-        print("Using a previous response...")
-        previous_response = PATH_DEFAULT_RESPONSES_DIR / "api_call_20231128_1523/response_20231128_1523.txt"
-
-        with open(previous_response, 'r') as file:
-            response: str = file.read()
+    prompt, response = prompt_generator.generate_prompt_create_abstract_model(system_description=system_description,
+                                                                              llm_model=LLModel.OPENAI_GPT35_Turbo,
+                                                                              save_to_disk=True,
+                                                                              function_call_prompt=True)
 
     # 3) Interpret response
     response_interpreter = ResponseInterpreter()
-    abstract_system = response_interpreter.interpret_abstract_model_json_response(response)
+    abstract_system = response_interpreter.interpret_abstract_model_json_response(response.response_str)
 
     # 4) Build detailed system
     builder = SystemBuilder(abstract_system)

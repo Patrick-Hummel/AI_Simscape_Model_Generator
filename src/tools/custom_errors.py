@@ -3,7 +3,7 @@
 """
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 01.02.2024
+Last modification: 04.04.2024
 """
 
 __version__ = "1"
@@ -29,8 +29,14 @@ class AbstractComponentError(Exception):
 
 
 class AbstractConnectionError(Exception):
-    def __init__(self, message=""):
+    def __init__(self, message="", list_wrong_connections: list = None):
         self.message = message
+
+        if list_wrong_connections is None:
+            list_wrong_connections = []
+
+        self.list_wrong_connections = list_wrong_connections
+
         super().__init__(self.message)
 
 

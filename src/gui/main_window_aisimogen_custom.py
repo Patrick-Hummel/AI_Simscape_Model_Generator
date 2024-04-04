@@ -3,7 +3,7 @@
 """
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 27.02.2024
+Last modification: 04.04.2024
 """
 
 __version__ = "1"
@@ -60,6 +60,8 @@ PROMPT_HIST_TYPE_RESPONSE = "RESPONSE"
 
 DEFAULT_LLM_PROMPT_TEMPERATURE = 1.0
 
+FUNCTION_CALL_CAPABLE_MODELS = [LLModel.OPENAI_GPT35_Turbo, LLModel.MISTRAL_MIXTRAL_8X7B]
+
 
 class Ui_MainWindow_Custom(Ui_MainWindow):
 
@@ -81,7 +83,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.last_json_response_str = ""
 
         self.current_model = LLModel.OPENAI_GPT35_Turbo
-        self.prompt_generator = PromptGenerator(offline_mode=True, temperature=DEFAULT_LLM_PROMPT_TEMPERATURE)
+        self.prompt_generator = PromptGenerator(offline_mode=False, temperature=DEFAULT_LLM_PROMPT_TEMPERATURE)
 
         self.selection_abstract_component_checkbox_dict = {}
         self.selected_abstract_component_types_dict = {}
@@ -100,14 +102,32 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.canvas_detailed = None
         self.cursor_detailed = None
 
+        self.fig_selected_subsystem = None
+        self.ax_selected_subsystem = None
+        self.canvas_selected_subsystem = None
+        self.cursor_selected_subsystem = None
+
         self.graph_abstract_model = None
         self.pos_abstract_model = {}
 
         self.graph_detailed_model = None
         self.pos_detailed_model = {}
 
+        self.graph_selected_subsystem = None
+        self.pos_selected_subsystem = {}
+
         self.detailed_system_components_subsystems_list = []
         self.detailed_model_deletion_selection = ""
+
+        self.selected_subsystem_components_list = []
+
+        self.detailed_model_primary_selection = ""
+        self.primary_selection_component = None
+        self.primary_selection_subsystem = None
+
+        self.current_displayed_subsystem = None
+
+        self.detailed_model_secondary_selection = ""
 
         self.offline_mode = True
 
@@ -132,7 +152,6 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.comboBox_add_connection_from.currentIndexChanged.connect(self.on_connection_from_changed)
         self.comboBox_add_connection_to.currentIndexChanged.connect(self.on_connection_to_changed)
 
-        self.pushButton_generate_response.clicked.connect(self.on_click_generate_response)
         self.pushButton_create_specification_summary.clicked.connect(self.on_click_create_specification_summary)
         self.pushButton_verify_specification_summary.clicked.connect(self.on_click_create_abstract_system_model)
         self.pushButton_abstract_model_send_feedback.clicked.connect(self.on_click_send_feedback_on_abstract_model)
@@ -144,7 +163,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.pushButton_detailed_model_add_subsystem.clicked.connect(self.on_click_add_detailed_model_subsystem)
         self.pushButton_detailed_model_add_connection.clicked.connect(self.on_click_add_detailed_model_connection)
         self.pushButton_detailed_model_delete_selection.clicked.connect(self.on_click_delete_selection_from_detailed_model)
-        self.pushButton_upgrade_detailed_model.clicked.connect(self.on_click_upgrade_detailed_model)
+        self.pushButton_detailed_model_update_parameters.clicked.connect(self.update_component_parameters)
         self.pushButton_single_upgrader.clicked.connect(self.on_click_single_upgrade_detailed_model)
         self.pushButton_combined_upgrader.clicked.connect(self.on_click_combined_upgrade_detailed_model)
         self.pushButton_build_simscape_model.clicked.connect(self.on_click_build_simscape_model)
@@ -183,7 +202,14 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
             self.groupBox_detailed_model_visualization)
 
         # Connect the Matplotlib cursor event
-        self.cursor_detailed = self.canvas_detailed.mpl_connect('button_press_event', self.on_canvas_abstract_click)
+        self.cursor_detailed = self.canvas_detailed.mpl_connect('button_press_event', self.on_canvas_detailed_model_click)#
+
+        # Create matplotlib plot within groupbox
+        self.fig_selected_subsystem, self.ax_selected_subsystem, self.canvas_selected_subsystem = _create_matplotlib_figure_groupbox(
+            self.groupBox_detailed_model_subsystem_visualization)
+
+        # Connect the Matplotlib cursor event
+        self.cursor_selected_subsystem = self.canvas_selected_subsystem.mpl_connect('button_press_event', self.on_canvas_selected_subsystem_click)
 
         # Temporary for debugging
         self.label_info_current_state.setText(self.state_machine.current_state.name)
@@ -205,6 +231,26 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         # Set the scroll area widget
         self.scrollArea_abstract_components_selection.setWidget(scroll_content)
+
+        self.detailed_model_param_labels_list = [self.label_desc_detailed_model_param_1,
+                                                 self.label_desc_detailed_model_param_2,
+                                                 self.label_desc_detailed_model_param_3,
+                                                 self.label_desc_detailed_model_param_4,
+                                                 self.label_desc_detailed_model_param_5,
+                                                 self.label_desc_detailed_model_param_6,
+                                                 self.label_desc_detailed_model_param_7,
+                                                 self.label_desc_detailed_model_param_8,
+                                                 self.label_desc_detailed_model_param_9]
+
+        self.detailed_model_param_line_edits_list = [self.lineEdit_detailed_model_param_1,
+                                                 self.lineEdit_detailed_model_param_2,
+                                                 self.lineEdit_detailed_model_param_3,
+                                                 self.lineEdit_detailed_model_param_4,
+                                                 self.lineEdit_detailed_model_param_5,
+                                                 self.lineEdit_detailed_model_param_6,
+                                                 self.lineEdit_detailed_model_param_7,
+                                                 self.lineEdit_detailed_model_param_8,
+                                                 self.lineEdit_detailed_model_param_9]
 
     def retranslateUi(self, MainWindow):
         super().retranslateUi(MainWindow)
@@ -371,38 +417,6 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 self.on_update_detailed_system_model_created()
                 return
 
-    def on_click_generate_response(self):
-
-        # Communicate progress across different threads using a worker
-        worker = PercentageWorker(progress_bar=self.progressBar_request_prompt,
-                                  progress_bar_label=self.label_progress_request_prompt,
-                                  on_finished=self.update_on_response)
-
-        # Run in other thread
-        run_thread(self.generate_response_runner, worker)
-
-    def generate_response_runner(self, worker: PercentageWorker):
-
-        prompt_str = self.plainTextEdit_prompt.toPlainText()
-
-        worker.percentage = 50
-        worker.text = "Waiting for response..."
-
-        self.current_model = LLModel.from_str(name=self.comboBox_current_model.currentText())
-
-        prompt, response = self.prompt_generator.generate_prompt_create_specification_summary(prompt_str, llm_model=self.current_model)
-
-        self._update_gui_on_prompt_response(prompt=prompt, response=response,
-                                            prompt_title="Custom prompt",
-                                            response_title="Custom response",)
-
-        worker.percentage = 100
-        worker.text = "Response received."
-        worker.finish(response.response_str)
-
-    def update_on_response(self, response: str):
-        self.plainTextEdit_response.setPlainText(response)
-
     def on_click_create_specification_summary(self):
 
         # Communicate progress across different threads using a worker
@@ -492,8 +506,11 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 worker.percentage = 90
                 worker.text = f"Component autocorrect... Retry ({counter + 1})"
 
-                prompt, response = self.prompt_generator.generate_prompt_autocorrect_abstract_model(abstract_system_model_json=self.last_response_str,
-                                                                                                    error=acompe, llm_model=self.current_model)
+                use_function_call = self.checkBox_config_function_call_prompt.isChecked()
+
+                prompt, response = self.prompt_generator.generate_prompt_autocorrect_abstract_model(
+                    abstract_system_model_json=self.last_response_str, error=acompe,
+                    llm_model=self.current_model, function_call_prompt=use_function_call)
 
                 self._update_gui_on_prompt_response(prompt=prompt, response=response,
                                                     prompt_title="Auto correct for abstract system model",
@@ -506,8 +523,22 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
             except AbstractConnectionError as acone:
                 print(f"Error interpreting response: {acone}")
 
+                worker.percentage = 90
+                worker.text = f"Connection autocorrect... Retry ({counter + 1})"
+
+                use_function_call = self.checkBox_config_function_call_prompt.isChecked()
+
+                prompt, response = self.prompt_generator.generate_prompt_autocorrect_abstract_model(
+                    abstract_system_model_json=self.last_response_str, error=acone,
+                    llm_model=self.current_model, function_call_prompt=use_function_call)
+
+                self._update_gui_on_prompt_response(prompt=prompt, response=response,
+                                                    prompt_title="Auto correct for abstract system model",
+                                                    response_title="Modified abstract system model")
+
+                self.last_response_str = response.response_str
+
                 counter += 1
-                raise NotImplementedError()
 
         worker.percentage = 100
         worker.text = "Abstract system model created."
@@ -529,15 +560,17 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.update_selected_abstract_component_type()
 
         specification_summary_str = self.plainTextEdit_specification_summary.toPlainText()
-
         self.current_model = LLModel.from_str(name=self.comboBox_current_model.currentText())
+        use_function_call = self.checkBox_config_function_call_prompt.isChecked()
 
         worker.percentage = 50
         worker.text = "Waiting for response..."
         print("Sending new request...")
 
         # 1) Generate prompt
-        prompt, response = self.prompt_generator.generate_prompt_create_abstract_model(specification_summary_str, llm_model=self.current_model)
+        prompt, response = self.prompt_generator.generate_prompt_create_abstract_model(system_description=specification_summary_str,
+                                                                                       llm_model=self.current_model,
+                                                                                       function_call_prompt=use_function_call)
 
         self._update_gui_on_prompt_response(prompt=prompt, response=response,
                                             prompt_title="Create abstract system model",
@@ -572,8 +605,11 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         worker.text = "Waiting for response..."
 
         self.current_model = LLModel.from_str(name=self.comboBox_current_model.currentText())
+        use_function_call = self.checkBox_config_function_call_prompt.isChecked()
 
-        prompt, response = self.prompt_generator.generate_prompt_manual_autocorrection_abstract_model(self.last_response_str, llm_model=self.current_model)
+        prompt, response = self.prompt_generator.generate_prompt_autocorrect_abstract_model(
+            self.last_response_str, error=None,
+            llm_model=self.current_model, function_call_prompt=use_function_call)
 
         self._update_gui_on_prompt_response(prompt=prompt, response=response,
                                             prompt_title="Manual autocorrect request for abstract system model",
@@ -596,13 +632,16 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
     def send_feedback_on_abstract_model_runner(self, worker: PercentageWorker):
 
         feedback_str = self.plainTextEdit_abstract_model_feedback.toPlainText()
+        self.current_model = LLModel.from_str(name=self.comboBox_current_model.currentText())
+        use_function_call = self.checkBox_config_function_call_prompt.isChecked()
 
         worker.percentage = 50
         worker.text = "Waiting for response..."
 
-        self.current_model = LLModel.from_str(name=self.comboBox_current_model.currentText())
-
-        prompt, response = self.prompt_generator.generate_prompt_improve_abstract_model_by_feedback(self.last_response_str, feedback_str, llm_model=self.current_model)
+        prompt, response = self.prompt_generator.generate_prompt_improve_abstract_model_by_feedback(abstract_system_model_json=self.last_response_str,
+                                                                                                    feedback=feedback_str,
+                                                                                                    llm_model=self.current_model,
+                                                                                                    function_call_prompt=use_function_call)
 
         self._update_gui_on_prompt_response(prompt=prompt, response=response,
                                             prompt_title="Feedback for abstract system model",
@@ -725,21 +764,34 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         # State machine transition
         self.state_machine.set_state(State.SIMSCAPE_MODEL_GENERATED)
 
-    def on_click_upgrade_detailed_model(self):
-
-        self.tabWidget_main.setCurrentIndex(3)
-
     def on_click_single_upgrade_detailed_model(self):
 
         selected_upgrade_pattern = self.comboBox_single_upgrader_pattern.currentText()
         selected_upgrade_target = int(self.spinBox_upgrader_target.value())
 
         up = BasicUpgrader(self.detailed_system_model)
-
         sigup = SingleUpgrader(up)
-        sigup.upgrade(pattern_name=selected_upgrade_pattern, subsystem_unique_name='LampMissionSubsystem_3', target=selected_upgrade_target)
+
+        if self.radioButton_upgrade_all_subsystems.isChecked():
+
+            for subsys in self.detailed_system_model.subsystem_list:
+
+                sigup.upgrade(pattern_name=selected_upgrade_pattern,
+                              subsystem_unique_name=subsys.unique_name,
+                              target=selected_upgrade_target)
+
+        elif self.radioButton_upgrade_selected_subsystem.isChecked():
+            sigup.upgrade(pattern_name=selected_upgrade_pattern,
+                          subsystem_unique_name=self.current_displayed_subsystem.unique_name,
+                          target=selected_upgrade_target)
+
+        self.selected_subsystem_components_list = []
+
+        for comp in self.current_displayed_subsystem.component_list:
+            self.selected_subsystem_components_list.append(comp.unique_name)
 
         self.on_update_detailed_system_model_created()
+        self.create_selected_subsystem_network_graph_plot()
 
     def on_click_combined_upgrade_detailed_model(self):
 
@@ -747,11 +799,27 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         selected_upgrade_target = int(self.spinBox_upgrader_target.value())
 
         up = BasicUpgrader(self.detailed_system_model)
-
         comup = CombineUpgrader(up)
-        comup.upgrade(pattern_name=selected_upgrade_pattern, subsystem_unique_name='LampMissionSubsystem_3', target=selected_upgrade_target)
+
+        if self.radioButton_upgrade_all_subsystems.isChecked():
+
+            for subsys in self.detailed_system_model.subsystem_list:
+                comup.upgrade(pattern_name=selected_upgrade_pattern,
+                              subsystem_unique_name=subsys.unique_name,
+                              target=selected_upgrade_target)
+
+        elif self.radioButton_upgrade_selected_subsystem.isChecked():
+            comup.upgrade(pattern_name=selected_upgrade_pattern,
+                          subsystem_unique_name=self.current_displayed_subsystem.unique_name,
+                          target=selected_upgrade_target)
+
+        self.selected_subsystem_components_list = []
+
+        for comp in self.current_displayed_subsystem.component_list:
+            self.selected_subsystem_components_list.append(comp.unique_name)
 
         self.on_update_detailed_system_model_created()
+        self.create_selected_subsystem_network_graph_plot()
 
     def on_click_build_simscape_model(self):
 
@@ -790,7 +858,8 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self.pos_abstract_model = nx.spring_layout(self.graph_abstract_model)
 
         # Plot the graph on the subplot
-        nx.draw(self.graph_abstract_model, self.pos_abstract_model, with_labels=True, font_weight='bold', ax=self.ax_abstract)  # node_size=700, node_color='skyblue'
+        nx.draw(self.graph_abstract_model, self.pos_abstract_model, with_labels=True, font_weight='bold', font_size=10,
+                ax=self.ax_abstract, node_color='LightGreen')  # node_size=700
 
         # self.ax_node_profile.autoscale()
         self.fig_abstract.tight_layout()
@@ -820,7 +889,11 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         for n in self.graph_detailed_model.nodes():
             if n == self.detailed_model_deletion_selection:
+                color_map.append('red')
+            elif n == self.detailed_model_primary_selection:
                 color_map.append('orange')
+            elif n == self.detailed_model_secondary_selection:
+                color_map.append('green')
             else:
                 color_map.append('skyblue')
 
@@ -833,13 +906,84 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.canvas_detailed.draw()
 
-    def on_canvas_abstract_click(self, event):
+    def create_selected_subsystem_network_graph_plot(self, keep_previous_pos: bool = False):
+
+        # Clear plot first
+        self.ax_selected_subsystem.cla()
+
+        # Create networkx graph
+        self.graph_selected_subsystem = self.current_displayed_subsystem.as_networkx_graph()
+
+        if not keep_previous_pos or len(self.pos_selected_subsystem) <= 0:
+
+            # Position nodes (different layouts possible)
+            self.pos_selected_subsystem = nx.spring_layout(self.graph_selected_subsystem)
+
+        color_map = []
+
+        for n in self.graph_selected_subsystem.nodes():
+            if n == self.detailed_model_deletion_selection:
+                color_map.append('red')
+            elif n == self.detailed_model_primary_selection:
+                color_map.append('orange')
+            elif n == self.detailed_model_secondary_selection:
+                color_map.append('green')
+            else:
+                color_map.append('skyblue')
+
+        # Plot the graph on the subplot
+        nx.draw(self.graph_selected_subsystem, self.pos_selected_subsystem, with_labels=True, font_weight='bold', font_size=10,
+                ax=self.ax_selected_subsystem, node_color=color_map)  # node_size=700, node_color='skyblue'
+
+        # self.ax_node_profile.autoscale()
+        self.fig_selected_subsystem.tight_layout()
+
+        self.canvas_selected_subsystem.draw()
+
+    def on_canvas_selected_subsystem_click(self, event):
+
+        if event.inaxes == self.ax_selected_subsystem:
+            x, y = event.xdata, event.ydata
+
+            # Check if a node is clicked
+            node_clicked = self.pick_node(x, y, self.graph_selected_subsystem, self.pos_selected_subsystem)
+
+            if node_clicked is not None:
+
+                node_clicked_index = self.selected_subsystem_components_list.index(node_clicked)
+
+                # Left button: 1, Middle button (Scroll wheel): 2, Right button: 3
+                if event.button == 1:
+                    self.detailed_model_primary_selection = node_clicked
+                    self.comboBox_add_connection_from.setCurrentIndex(node_clicked_index)
+                    self.interpret_primary_click_selected_subsystem()
+
+                elif event.button == 2:
+                    self.detailed_model_deletion_selection = node_clicked
+                    self.label_detailed_model_deletion_selection.setText(node_clicked)
+                    self.create_selected_subsystem_network_graph_plot(keep_previous_pos=True)
+
+                elif event.button == 3:
+                    self.detailed_model_secondary_selection = node_clicked
+                    self.comboBox_add_connection_to.setCurrentIndex(node_clicked_index)
+                    self.create_selected_subsystem_network_graph_plot(keep_previous_pos=True)
+
+            else:
+                # Check if an edge is clicked only if a node was not selected (nodes have priority)
+                edge_clicked = self.pick_edge(x, y, self.graph_selected_subsystem, self.pos_selected_subsystem)
+
+                if edge_clicked is not None:
+                    if event.button == 2:
+                        self.detailed_model_deletion_selection = edge_clicked
+                        self.label_detailed_model_deletion_selection.setText(f"{edge_clicked[0]} -> {edge_clicked[1]}")
+
+    def on_canvas_detailed_model_click(self, event):
 
         if event.inaxes == self.ax_detailed:
             x, y = event.xdata, event.ydata
 
             # Check if a node is clicked
-            node_clicked = self.pick_node(x, y)
+            node_clicked = self.pick_node(x, y, self.graph_detailed_model, self.pos_detailed_model)
 
             if node_clicked is not None:
 
@@ -847,41 +991,49 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
                 # Left button: 1, Middle button (Scroll wheel): 2, Right button: 3
                 if event.button == 1:
+                    self.detailed_model_primary_selection = node_clicked
                     self.comboBox_add_connection_from.setCurrentIndex(node_clicked_index)
+                    self.interpret_primary_click()
+
                 elif event.button == 2:
                     self.detailed_model_deletion_selection = node_clicked
                     self.label_detailed_model_deletion_selection.setText(node_clicked)
                     self.create_detailed_model_network_graph_plot(keep_previous_pos=True)
+
                 elif event.button == 3:
+                    self.detailed_model_secondary_selection = node_clicked
                     self.comboBox_add_connection_to.setCurrentIndex(node_clicked_index)
+                    self.create_detailed_model_network_graph_plot(keep_previous_pos=True)
 
             else:
                 # Check if an edge is clicked only if a node was not selected (nodes have priority)
-                edge_clicked = self.pick_edge(x, y)
+                edge_clicked = self.pick_edge(x, y, self.graph_detailed_model, self.pos_detailed_model)
 
                 if edge_clicked is not None:
                     if event.button == 2:
                         self.detailed_model_deletion_selection = edge_clicked
                         self.label_detailed_model_deletion_selection.setText(f"{edge_clicked[0]} -> {edge_clicked[1]}")
 
-    def pick_node(self, x, y):
+    @staticmethod
+    def pick_node(x, y, graph, pos):
 
-        for node in self.graph_detailed_model.nodes():
+        for node in graph.nodes():
             click_point = Point(x, y)
-            node_x, node_y = self.pos_detailed_model[node]
+            node_x, node_y = pos[node]
             node_center_point = Point(node_x, node_y)
             if click_point.distance(node_center_point) < 0.05:  # Adjust this threshold as needed
                 return node
         return None
 
-    def pick_edge(self, x, y):
+    @staticmethod
+    def pick_edge(x, y, graph, pos):
 
-        for edge in self.graph_detailed_model.edges():
+        for edge in graph.edges():
 
             node1, node2 = edge
 
-            node1_x, node1_y = self.pos_detailed_model[node1]
-            node2_x, node2_y = self.pos_detailed_model[node2]
+            node1_x, node1_y = pos[node1]
+            node2_x, node2_y = pos[node2]
 
             click_point = Point(x, y)
             edge_line = LineString([(node1_x, node1_y), (node2_x, node2_y)])
@@ -890,6 +1042,97 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 return node1, node2
 
         return None
+
+    def interpret_primary_click(self):
+
+        self.primary_selection_component = None
+        self.primary_selection_subsystem = None
+
+        for subsys in self.detailed_system_model.subsystem_list:
+
+            if self.detailed_model_primary_selection == subsys.unique_name:
+
+                self.primary_selection_subsystem = subsys
+                self.current_displayed_subsystem = subsys
+
+                self.create_selected_subsystem_network_graph_plot()
+                self.label_detailed_model_upgrade_selected_subsystem.setText(self.detailed_model_primary_selection)
+
+                self.selected_subsystem_components_list = []
+
+                for comp in subsys.component_list:
+                    self.selected_subsystem_components_list.append(comp.unique_name)
+
+                break
+
+        for comp in self.detailed_system_model.component_list:
+
+            if self.detailed_model_primary_selection == comp.unique_name:
+
+                self.primary_selection_component = comp
+
+                self.label_detailed_model_params_subsystem.setText("None (Main System)")
+                self.label_detailed_model_params_component.setText(self.detailed_model_primary_selection)
+
+                for i in range(0, len(self.detailed_model_param_labels_list)):
+
+                    if i < len(comp.parameter.keys()):
+                        param_key = list(comp.parameter.keys())[i]
+                        param = comp.parameter[param_key]
+                        self.detailed_model_param_labels_list[i].setEnabled(True)
+                        self.detailed_model_param_line_edits_list[i].setEnabled(True)
+                        self.detailed_model_param_labels_list[i].setText(f"{param_key}:")
+                        self.detailed_model_param_line_edits_list[i].setText(str(param))
+                    else:
+                        self.detailed_model_param_labels_list[i].setEnabled(False)
+                        self.detailed_model_param_line_edits_list[i].setEnabled(False)
+                        self.detailed_model_param_labels_list[i].setText(f"Parameter {i+1}:")
+                        self.detailed_model_param_line_edits_list[i].setText("")
+
+                break
+
+            self.create_detailed_model_network_graph_plot(keep_previous_pos=True)
+
+    def interpret_primary_click_selected_subsystem(self):
+
+        self.primary_selection_component = None
+        self.primary_selection_subsystem = None
+
+        for comp in self.current_displayed_subsystem.component_list:
+
+            if self.detailed_model_primary_selection == comp.unique_name:
+
+                self.primary_selection_component = comp
+
+                self.label_detailed_model_params_subsystem.setText(f"{self.current_displayed_subsystem.unique_name}")
+                self.label_detailed_model_params_component.setText(self.detailed_model_primary_selection)
+
+                for i in range(0, len(self.detailed_model_param_labels_list)):
+
+                    if i < len(comp.parameter.keys()):
+                        param_key = list(comp.parameter.keys())[i]
+                        param = comp.parameter[param_key]
+                        self.detailed_model_param_labels_list[i].setEnabled(True)
+                        self.detailed_model_param_line_edits_list[i].setEnabled(True)
+                        self.detailed_model_param_labels_list[i].setText(f"{param_key}:")
+                        self.detailed_model_param_line_edits_list[i].setText(str(param))
+                    else:
+                        self.detailed_model_param_labels_list[i].setEnabled(False)
+                        self.detailed_model_param_line_edits_list[i].setEnabled(False)
+                        self.detailed_model_param_labels_list[i].setText(f"Parameter {i+1}:")
+                        self.detailed_model_param_line_edits_list[i].setText("")
+
+                break
+
+        self.create_selected_subsystem_network_graph_plot(keep_previous_pos=True)
+
+    def update_component_parameters(self):
+
+        if self.primary_selection_component is not None:
+
+            for i in range(0, len(self.detailed_model_param_labels_list)):
+                # TODO Update parameters of component
+                pass
 
 
 def _create_matplotlib_figure_groupbox(groupbox: QGroupBox) -> (Figure, Any, FigureCanvas):
@@ -914,6 +1157,7 @@ def _create_matplotlib_figure_groupbox(groupbox: QGroupBox) -> (Figure, Any, Fig
     groupbox.setLayout(widget.layout())
 
     return fig, ax, canvas
+
 
 def add_items_to_tree_json_response(parent_item, data: dict):
 

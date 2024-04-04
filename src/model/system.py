@@ -7,7 +7,7 @@ Solution built upon code originally developed by Yu Zhang as part of a master th
 the Institute of Industrial Automation and Software Engineering (IAS) as part of the University of Stuttgart.
 Source: https://github.com/yuzhang330/simulink-model-generation-and-evolution
 
-Last modification: 25.02.2024
+Last modification: 04.04.2024
 """
 
 __version__ = "2"
@@ -289,6 +289,26 @@ class Subsystem(Container):
                 "connections": [connection.as_dict() for connection in self.connection_list],
                 # "parameters": self.parameter
                 }
+
+    def as_networkx_graph(self) -> Graph:
+
+        system_graph = nx.Graph()
+
+        edges_list = []
+
+        for connection in self.connection_list:
+            edges_list.append((connection.from_block.unique_name, connection.to_block.unique_name))
+
+        system_graph.add_edges_from(edges_list)
+
+        components_unique_name_list = [component.unique_name for component in self.component_list]
+        included_node_list = list(system_graph.nodes)
+
+        for node in components_unique_name_list:
+            if node not in included_node_list:
+                system_graph.add_node(node)
+
+        return system_graph
 
     def list_ports(self):
 
@@ -880,6 +900,7 @@ class System(Container):
                 "connections": [connection.as_dict() for connection in self.connection_list],
                 "parameters": self.parameter}
 
+    # TODO Improve by moving this to the super class (Container)
     def as_networkx_graph(self) -> Graph:
 
         system_graph = nx.Graph()

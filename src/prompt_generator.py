@@ -3,7 +3,7 @@
 """
 Prompt Generator
 
-Last modification: 27.02.2024
+Last modification: 04.04.2024
 """
 
 __version__ = "1"
@@ -13,9 +13,8 @@ from datetime import datetime
 
 import tiktoken
 
-from config.gobal_constants import PATH_DEFAULT_JSON_SCHEMA_FILE, PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE, \
-    PATH_DEFAULT_LAST_GENERATED_PROMPT_TXT_FILE, PATH_DEFAULT_PROMPT_INSTRUCTIONS_JSON_RESPONSE, \
-    PATH_DEFAULT_PROMPT_INSTRUCTIONS_PREFACE, OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K, \
+from config.gobal_constants import PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE, \
+    PATH_DEFAULT_LAST_GENERATED_PROMPT_TXT_FILE, OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K, \
     PATH_DEFAULT_RESPONSES_DIR
 
 from src import prompt_request_factory
@@ -27,6 +26,19 @@ from src.tools.custom_errors import AbstractComponentError, AbstractConnectionEr
 
 DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH = PATH_DEFAULT_RESPONSES_DIR / "api_call_20240208_1858/response_20240208_1858.json"
 
+# Static, predefined parts of the prompts
+GENERAL_PROMPT_PREFACE = "You are an electrical engineer."
+
+ABSTRACT_MODEL_GENERATION_INSTRUCTIONS = ()
+
+JSON_RESPONSE_INSTRUCTIONS = ("Only respond with a single JSON object that contains the components and "
+                              "connections of the electrical circuit. Each component has a unique ID, "
+                              "for example 'Resistor_0'. Each component has two or more ports, each with "
+                              "a unique ID. For example 'Resistor_0_R1' for the right and 'Resistor_0_L1' "
+                              "for the left port of a resistor. The components are connected via these "
+                              "ports. Each connection consists of the attributes 'from' and 'to' which "
+                              "have port ID as values. Each port needs to be part of a connection. Response "
+                              "must only in JSON, no additional text.")
 
 class PromptGenerator:
 
@@ -34,14 +46,21 @@ class PromptGenerator:
 
         self.offline_mode = offline_mode
         self._temperature = temperature
-
-        self.system_modeling_instructions = ""
-        self.json_response_instructions = ""
-
         self._latest_specification_summary = ""
 
+        # Load the JSON schema & validation instructions (only for basic prompt)
+        self.json_response_schema = "Use the following JSON schema to validate your JSON, but don't include it in the response: "
+
+        if PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE.is_file():
+            with open(PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE, 'r') as file:
+                json_schema_str: str = file.read()
+        else:
+            print(f"The file {PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE} does not exist.")
+
+        self.json_response_schema += json_schema_str
+
+        self.system_modeling_instructions = ""
         self.create_system_modeling_instructions()
-        self._create_json_response_instructions()
 
     @property
     def temperature(self) -> float:
@@ -70,30 +89,6 @@ class PromptGenerator:
             instructions += f"{component}, "
 
         self.system_modeling_instructions = instructions
-
-    def _create_json_response_instructions(self):
-
-        instructions_file_path = PATH_DEFAULT_PROMPT_INSTRUCTIONS_JSON_RESPONSE
-
-        if instructions_file_path.is_file():
-            with open(instructions_file_path, 'r') as file:
-                instructions_json_response: str = file.read()
-        else:
-            print(f"The file {instructions_file_path} does not exist.")
-
-        # instructions_json_response += " Use the following JSON schema to validate your JSON, but don't include it in the response: "
-        #
-        # schema_file_path = PATH_DEFAULT_ABSTRACT_SYSTEM_JSON_SCHEMA_FILE
-        #
-        # if schema_file_path.is_file():
-        #     with open(schema_file_path, 'r') as file:
-        #         json_schema_str: str = file.read()
-        # else:
-        #     print(f"The file {schema_file_path} does not exist.")
-        #
-        # instructions_json_response += json_schema_str
-
-        self.json_response_instructions = instructions_json_response
 
     def _save_prompt_and_response_to_disk(self, prompt_str: str, response_str: str) -> None:
 
@@ -134,10 +129,13 @@ class PromptGenerator:
 
     def generate_prompt_create_specification_summary(self, usr: str, llm_model: LLModel) -> (str, ResponseData):
 
-        final_prompt = ("You are a systems engineer. Keep your response text only and as short as possible. "
-                        "Summarize only the the important information that is required to specify the system, "
-                        "its components and their connections from following user requirements "
-                        "specification: " + usr)
+        final_prompt = (f"{GENERAL_PROMPT_PREFACE} "
+                        f"Keep your response as short as possible and text only. "
+                        f"Summarize the information from the following system specification: {usr} "
+                        f"First, identify and list every component of the described electrical circuit. "
+                        f"Second, identify and list all the connections between these components that are necessary "
+                        f"to make a functional circuit matching the specification. "
+                        f"Third, provide step by step instructions on how to correctly connect the components.")
 
         if self.offline_mode:
 
@@ -151,35 +149,44 @@ class PromptGenerator:
 
         return final_prompt, response_data
 
-    def generate_prompt_create_abstract_model(self, system_description: str, llm_model: LLModel, save_to_disk: bool = True) -> (str, ResponseData):
+    def generate_prompt_create_abstract_model(self, system_description: str, llm_model: LLModel,
+                                              save_to_disk: bool = True, function_call_prompt: bool = False) -> (str, ResponseData):
 
         # Save for future correction prompts
         self._latest_specification_summary = system_description
 
-        instructions_preface_file_path = PATH_DEFAULT_PROMPT_INSTRUCTIONS_PREFACE
-
-        if instructions_preface_file_path.is_file():
-            with open(instructions_preface_file_path, 'r') as file:
-                instructions_preface: str = file.read()
-        else:
-            print(f"The file {instructions_preface_file_path} does not exist.")
-
-        prompt = " The description: " + system_description + " "
-
-        final_prompt = instructions_preface + prompt + self.system_modeling_instructions + self.json_response_instructions
+        final_prompt = (f"{GENERAL_PROMPT_PREFACE} You design electrical circuits based on a provided specification. "
+                        f"You will analyze and identify all the necessary components and the connections between them "
+                        f"from the following specification: {system_description} "
+                        f"Design this electrical system and verify that this model is functional. Improve the model "
+                        f"until it matches the specification and there are no problems. Each electrical circuit requires "
+                        f"one or more power sources. Make sure all components are connected to form a complete and "
+                        f"uninterrupted electrical circuit with at least one power source in the path. Electricity must "
+                        f"be able to flow along the connections from the power source across components and back to the "
+                        f"power source."
+                        f"{self.system_modeling_instructions} "
+                        f"{JSON_RESPONSE_INSTRUCTIONS}")
 
         if self.offline_mode:
 
             with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
                 response: str = file.read()
 
-            response_data = ResponseData(response_str=response,
-                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+            response_data = ResponseData(response_str=response, input_tokens=15, output_tokens=15, time_seconds=5.0)
 
         else:
 
-            # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+            # Send generated prompt as request (either as a basic completion prompt or function call prompt)
+            if function_call_prompt:
+
+                response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+
+            else:
+
+                # Append the JSON schema and validation instructions if using a basic completion prompt
+                final_prompt += f" {self.json_response_schema}"
+
+                response_data = prompt_request_factory.request(final_prompt, llm_model, self._temperature)
 
             if save_to_disk:
                 self._save_prompt_and_response_to_disk(final_prompt, response_data.response_str)
@@ -187,86 +194,89 @@ class PromptGenerator:
         return final_prompt, response_data
 
     def generate_prompt_improve_abstract_model_by_feedback(self, abstract_system_model_json: str, feedback: str,
-                                                           llm_model: LLModel) -> (str, ResponseData):
+                                                           llm_model: LLModel, function_call_prompt: bool = False) -> (str, ResponseData):
 
-        final_prompt = ("The following JSON contains a model of a system with its components and connections. "
-                        + abstract_system_model_json
-                        + " Improve this model and the json using the following instructions: "
-                        + feedback)
+        final_prompt = (f"{GENERAL_PROMPT_PREFACE} You design electrical circuits. "
+                        f"The following JSON contains a model of a system with its components and connections. "
+                        f"{abstract_system_model_json} Improve this model and the json using the following instructions: "
+                        f"{feedback} {JSON_RESPONSE_INSTRUCTIONS}")
 
         if self.offline_mode:
 
             with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
                 response: str = file.read()
 
-            response_data = ResponseData(response_str=response,
-                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+            response_data = ResponseData(response_str=response, input_tokens=15, output_tokens=15, time_seconds=5.0)
 
         else:
 
-            # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+            # Send generated prompt as request (either as a basic completion prompt or function call prompt)
+            if function_call_prompt:
+
+                response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+
+            else:
+
+                # Append the JSON schema and validation instructions if using a basic completion prompt
+                final_prompt += f" {self.json_response_schema}"
+
+                response_data = prompt_request_factory.request(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data
 
-    def generate_prompt_autocorrect_abstract_model(self, abstract_system_model_json: str, error: Exception,
-                                                   llm_model: LLModel) -> (str, ResponseData):
+    def generate_prompt_autocorrect_abstract_model(self, abstract_system_model_json: str, error: Exception | None,
+                                                   llm_model: LLModel, function_call_prompt: bool = False) -> (str, ResponseData):
 
         if isinstance(error, AbstractComponentError):
-            auto_correct_instruction = ("There is a problem with a component. Correct the model based on this error message: "
-                                        + error.message + ". Problem with the following components: "
-                                        + str(error.list_wrong_components) + " ." + self.system_modeling_instructions
-                                        + "Make sure that every component name excluding the '_' and number is in the "
-                                          "list of possible components, if not, find the closest one and replace it.")
+            auto_correct_instruction = (f"There is a problem with a component. "
+                                        f"Correct the model based on this error message: {error.message}. "
+                                        f"Problem with the following components: {str(error.list_wrong_components)}. "
+                                        f"{self.system_modeling_instructions} "
+                                        f"Make sure that every component name excluding the '_' and number is in the "
+                                        f"list of possible components, if not, find the closest one and replace it.")
 
         elif isinstance(error, AbstractConnectionError):
-            auto_correct_instruction = ("There is a problem with a connection. Correct the model based on this error message: "
-                                        + error.message)
+            auto_correct_instruction = (f"There is a problem with a connection. "
+                                        f"Correct the model based on this error message: {error.message}. "
+                                        f"Problem with the following connections: {str(error.list_wrong_connections)}")
+
+        elif error is None:
+
+            auto_correct_instruction = (f"Compare this model to these specifications: "
+                                        f"{self._latest_specification_summary} "
+                                        f"Identify any differences. Next, correct these differences until the model"
+                                        f"matches these specifications. Add or remove components and connections if needed."
+                                        f"Change connections if needed. Return the updated model. "
+                                        f"{self.system_modeling_instructions}")
 
         else:
             return
 
-        final_prompt = ("The following JSON contains a model of a system with its components and connections. "
-                        + abstract_system_model_json
-                        + " Improve this model and the json using the following instructions: "
-                        + auto_correct_instruction)
+        final_prompt = (f"{GENERAL_PROMPT_PREFACE} You design electrical circuits based on a provided specification. "
+                        f"The following JSON contains a model of a system with its components and connections: "
+                        f"{abstract_system_model_json} "
+                        f"Improve this model and the json using the following instructions: "
+                        f"{auto_correct_instruction} Only return a single JSON object, not other text.")
 
         if self.offline_mode:
 
             with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
                 response: str = file.read()
 
-            response_data = ResponseData(response_str=response,
-                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
+            response_data = ResponseData(response_str=response, input_tokens=15, output_tokens=15, time_seconds=5.0)
 
         else:
 
-            # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+            # Send generated prompt as request (either as a basic completion prompt or function call prompt)
+            if function_call_prompt:
 
-        return final_prompt, response_data
+                response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
 
-    def generate_prompt_manual_autocorrection_abstract_model(self, abstract_system_model_json: str, llm_model: LLModel) -> (str, ResponseData):
+            else:
 
-        final_prompt = ("The following JSON contains a model of a system with its components and connections. "
-                        + abstract_system_model_json
-                        + " Analyse and improve this model and the json so that it exactly matches these specifications: "
-                        + self._latest_specification_summary
-                        + " . Are there any errors with this design? Will it function the way it is intended? "
-                          "Is each component connected to at least two other components? Fix any errors. "
-                        + self.system_modeling_instructions)
+                # Append the JSON schema and validation instructions if using a basic completion prompt
+                final_prompt += f" {self.json_response_schema}"
 
-        if self.offline_mode:
-
-            with open(DEFAULT_ABSTRACT_MODEL_RESPONSE_PATH, 'r') as file:
-                response: str = file.read()
-
-            response_data = ResponseData(response_str=response,
-                                         input_tokens=15, output_tokens=15, time_seconds=5.0)
-
-        else:
-
-            # Send generated prompt as request
-            response_data = prompt_request_factory.request_as_function_call(final_prompt, llm_model, self._temperature)
+                response_data = prompt_request_factory.request(final_prompt, llm_model, self._temperature)
 
         return final_prompt, response_data
