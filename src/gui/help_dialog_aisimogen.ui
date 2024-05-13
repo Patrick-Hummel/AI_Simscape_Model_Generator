@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>HelpDialog</class>
+ <widget class="QDialog" name="HelpDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>480</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>AISiMoGen - How-To instructions</string>
+  </property>
+  <widget class="QPlainTextEdit" name="plainTextEdit">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>611</width>
+     <height>451</height>
+    </rect>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+   <property name="plainText">
+    <string>1) Create a file called &quot;.env&quot; in the project directory. Make sure it is excluded from version control. Add your API keys for the large language models you want to use. Name the keys &quot;OPENAI_API_KEY&quot;, &quot;TOGETHER_API_KEY&quot; and &quot;ANTHROPIC_API_KEY&quot; respectively.
+
+2) Select the components you want to include in the generated model in the &quot;Configuration&quot; tab. You may also adjust the temperature of the large language model here (default is 1.0). If the large language model you want to use does not support function call prompts, remove the checkmark.
+
+3) Select the large language model you want to use in the dropdown at the bottom of the window. Different large language models may be used for different tasks in the generation process.
+
+4) Enter the description of the system (specifically, an electrical circuit) you want to generate. Click &quot;Send&quot; to task the AI with creating a summary.
+
+5) Check if the summary is correct, as this is the basis for the next step of generating an abstract system model. Click &quot;Verify&quot; to proceed.
+
+6) Once completed, inspect the abstract system model. Provide textual feedback and send the feedback if necessary. If satisfied, click &quot;Create Detailed Model&quot;.
+
+7) Inspect the detailed system model. Add or remove component blocks and subsystems. Add or remove connections. Adjust parameters or update subsystems using fault-tolerant design patterns.
+
+8) Once satisfied, click &quot;Build Simscape Model&quot;. </string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

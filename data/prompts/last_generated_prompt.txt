@@ -1,45 +1,8 @@
 You are an electrical engineer. You design electrical circuits based on a provided specification. You will analyze and identify all the necessary components and the connections between them from the following specification: Components: 2 lamps, 2 switches, 1 battery.
 
-Connections: Battery to lamps, lamps to switches, switches to battery.
+Connections: Battery positive to one side of each switch, other side of each switch to one side of each lamp, other side of each lamp to battery negative.
 
 Instructions:
-1. Connect positive terminal of battery to one terminal of each lamp.
-2. Connect other terminal of each lamp to one terminal of each switch.
-3. Connect remaining terminals of switches to negative terminal of battery. Design this electrical system and verify that this model is functional. Improve the model until it matches the specification and there are no problems. Each electrical circuit requires one or more power sources. Make sure all components are connected to form a complete and uninterrupted electrical circuit with at least one power source in the path. Electricity must be able to flow along the connections from the power source across components and back to the power source.Only the following components may be used: SPSTSwitch, SPDTSwitch, SPMTSwitch, Battery, VoltageSourceAC, VoltageSourceDC, CurrentSourceAC, CurrentSourceDC, Capacitor, Inductor, Resistor, Diode, NChannelMOSFET, PChannelMOSFET, NPNBipolarTransistor, PNPBipolarTransistor, Mission, Lamp, Motor,  Only respond with a single JSON object that contains the components and connections of the electrical circuit. Each component has a unique ID, for example 'Resistor_0'. Each component has two or more ports, each with a unique ID. For example 'Resistor_0_R1' for the right and 'Resistor_0_L1' for the left port of a resistor. The components are connected via these ports. Each connection consists of the attributes 'from' and 'to' which have port ID as values. Each port needs to be part of a connection. Response must only in JSON, no additional text. Use the following JSON schema to validate your JSON, but don't include it in the response: {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "components": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {"type": "string"},
-          "ports": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "string"}
-              },
-              "required": ["id"]
-            }
-          }
-        },
-        "required": ["id", "ports"]
-      }
-    },
-    "connections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "from": {"type": "string"},
-          "to": {"type": "string"}
-        },
-        "required": ["from", "to"]
-      }
-    }
-  },
-  "required": ["components", "connections"]
-}
+1. Connect the positive terminal of the battery to one terminal of each switch.
+2. Connect the other terminal of each switch to one terminal of each lamp.
+3. Connect the other terminal of each lamp back to the negative terminal of the battery.  Design this electrical system and verify that this model is functional. Improve the model until it matches the specification and there are no problems. Each electrical circuit requires one or more power sources. Make sure all components are connected to form a complete and uninterrupted electrical circuit with at least one power source in the path. Electricity must be able to flow along the connections from the power source across components and back to the power source. Only the following components may be used: SPSTSwitch, SPDTSwitch, SPMTSwitch, Battery, VoltageSourceAC, VoltageSourceDC, CurrentSourceAC, CurrentSourceDC, Capacitor, Inductor, Resistor, Diode, NChannelMOSFET, PChannelMOSFET, NPNBipolarTransistor, PNPBipolarTransistor, Mission, Lamp, Motor,  Only respond with a single JSON object that contains the components and connections of the electrical circuit. Each component has a unique ID, for example 'Resistor_0'. Each component has two or more ports, each with a unique ID. For example 'Resistor_0_R1' for the right and 'Resistor_0_L1' for the left port of a resistor. The components are connected via these ports. Each connection consists of the attributes 'from' and 'to' which have port ID as values. Each port needs to be part of a connection. Response must only in JSON, no additional text.

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>AISiMoGen - AI Simscape Model Generator v.1.0</string>
+   <string>AISiMoGen - AI Simscape Model Generator - v1.0</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -20,6 +20,9 @@
     </property>
     <item>
      <widget class="QTabWidget" name="tabWidget_main">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -194,7 +197,7 @@
           </widget>
           <widget class="QWidget" name="tab_4">
            <attribute name="title">
-            <string>Response</string>
+            <string>Raw Response</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_11">
             <item>
@@ -977,7 +980,7 @@
              <rect>
               <x>310</x>
               <y>20</y>
-              <width>121</width>
+              <width>111</width>
               <height>23</height>
              </rect>
             </property>
@@ -988,7 +991,7 @@
            <widget class="QSpinBox" name="spinBox_upgrader_target">
             <property name="geometry">
              <rect>
-              <x>610</x>
+              <x>550</x>
               <y>40</y>
               <width>42</width>
               <height>22</height>
@@ -1006,7 +1009,7 @@
              <rect>
               <x>310</x>
               <y>60</y>
-              <width>121</width>
+              <width>111</width>
               <height>23</height>
              </rect>
             </property>
@@ -1017,7 +1020,7 @@
            <widget class="QComboBox" name="comboBox_single_upgrader_pattern">
             <property name="geometry">
              <rect>
-              <x>460</x>
+              <x>430</x>
               <y>20</y>
               <width>101</width>
               <height>22</height>
@@ -1027,7 +1030,7 @@
            <widget class="QComboBox" name="comboBox_combined_upgrader_pattern">
             <property name="geometry">
              <rect>
-              <x>460</x>
+              <x>430</x>
               <y>60</y>
               <width>101</width>
               <height>22</height>
@@ -1066,7 +1069,7 @@
            <widget class="QLabel" name="label_7">
             <property name="geometry">
              <rect>
-              <x>600</x>
+              <x>550</x>
               <y>20</y>
               <width>47</width>
               <height>13</height>
@@ -1079,40 +1082,64 @@
            <widget class="QLabel" name="label_8">
             <property name="geometry">
              <rect>
-              <x>700</x>
-              <y>20</y>
-              <width>331</width>
-              <height>16</height>
+              <x>710</x>
+              <y>0</y>
+              <width>271</width>
+              <height>41</height>
              </rect>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>7</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>Comparator (C): ... short description here...</string>
+             <string>Can detect a fault if the results of two components disagree, however it cannot correct an error.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
            <widget class="QLabel" name="label_9">
             <property name="geometry">
              <rect>
-              <x>700</x>
-              <y>40</y>
-              <width>331</width>
-              <height>16</height>
+              <x>710</x>
+              <y>30</y>
+              <width>321</width>
+              <height>41</height>
              </rect>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>7</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>Voter (V): ... short description here...</string>
+             <string>Compares multiple results using a majority-voting system and can determine the correct result as long as the majority of components are fault free.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
            <widget class="QLabel" name="label_10">
             <property name="geometry">
              <rect>
-              <x>700</x>
+              <x>710</x>
               <y>60</y>
               <width>331</width>
-              <height>16</height>
+              <height>51</height>
              </rect>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>7</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>S (S): ... short description here...</string>
+             <string>Makes use of spares of components when a fault is detected using a built-in unit for error detection. In the event of a fault, a spare component takes over.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
            <widget class="QLabel" name="label_detailed_model_upgrade_selected_subsystem">
@@ -1135,6 +1162,72 @@
              <string>Left click on a subystem to select it...</string>
             </property>
            </widget>
+           <widget class="QLabel" name="label_2">
+            <property name="geometry">
+             <rect>
+              <x>610</x>
+              <y>10</y>
+              <width>91</width>
+              <height>20</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Comparator (C):</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+           <widget class="QLabel" name="label_6">
+            <property name="geometry">
+             <rect>
+              <x>610</x>
+              <y>40</y>
+              <width>91</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Voter (V):</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+           <widget class="QLabel" name="label_11">
+            <property name="geometry">
+             <rect>
+              <x>610</x>
+              <y>70</y>
+              <width>91</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Sparing (S):</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
           </widget>
          </widget>
         </item>
@@ -1147,8 +1240,8 @@
        <widget class="QLabel" name="label">
         <property name="geometry">
          <rect>
-          <x>30</x>
-          <y>30</y>
+          <x>390</x>
+          <y>40</y>
           <width>81</width>
           <height>16</height>
          </rect>
@@ -1160,8 +1253,8 @@
        <widget class="QLabel" name="label_info_current_state">
         <property name="geometry">
          <rect>
-          <x>120</x>
-          <y>30</y>
+          <x>500</x>
+          <y>40</y>
           <width>351</width>
           <height>16</height>
          </rect>
@@ -1179,21 +1272,21 @@
        <widget class="QLabel" name="label_5">
         <property name="geometry">
          <rect>
-          <x>30</x>
-          <y>60</y>
+          <x>390</x>
+          <y>70</y>
           <width>111</width>
           <height>16</height>
          </rect>
         </property>
         <property name="text">
-         <string>Model Temperature:</string>
+         <string>LLM Temperature:</string>
         </property>
        </widget>
        <widget class="QDoubleSpinBox" name="doubleSpinBox_config_model_temperature">
         <property name="geometry">
          <rect>
-          <x>140</x>
-          <y>60</y>
+          <x>500</x>
+          <y>70</y>
           <width>62</width>
           <height>22</height>
          </rect>
@@ -1211,7 +1304,7 @@
        <widget class="QScrollArea" name="scrollArea_abstract_components_selection">
         <property name="geometry">
          <rect>
-          <x>410</x>
+          <x>30</x>
           <y>40</y>
           <width>311</width>
           <height>541</height>
@@ -1234,7 +1327,7 @@
        <widget class="QLabel" name="label_abstract_components_selection">
         <property name="geometry">
          <rect>
-          <x>410</x>
+          <x>30</x>
           <y>20</y>
           <width>241</width>
           <height>16</height>
@@ -1253,8 +1346,8 @@
        <widget class="QCheckBox" name="checkBox_config_function_call_prompt">
         <property name="geometry">
          <rect>
-          <x>30</x>
-          <y>100</y>
+          <x>390</x>
+          <y>110</y>
           <width>131</width>
           <height>17</height>
          </rect>
@@ -1330,7 +1423,7 @@
         <widget class="QLabel" name="label_progress_main_request">
          <property name="minimumSize">
           <size>
-           <width>150</width>
+           <width>180</width>
            <height>0</height>
           </size>
          </property>
@@ -1451,7 +1544,7 @@
        <item>
         <widget class="QLabel" name="label_desc_total_cost">
          <property name="text">
-          <string>Total Cost (EUR):</string>
+          <string>Total Cost (USD):</string>
          </property>
         </widget>
        </item>
@@ -1513,16 +1606,12 @@
     <property name="title">
      <string>Help</string>
     </property>
-   </widget>
-   <widget class="QMenu" name="menu_about">
-    <property name="title">
-     <string>About</string>
-    </property>
+    <addaction name="action_how_to_use"/>
+    <addaction name="action_about"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
    <addaction name="menu_help"/>
-   <addaction name="menu_about"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
    <property name="enabled">
@@ -1546,6 +1635,9 @@
    </property>
   </action>
   <action name="action_save_to_file_abstract">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Save to file (abstract)</string>
    </property>
@@ -1553,6 +1645,16 @@
   <action name="action_save_to_file_detailed">
    <property name="text">
     <string>Save to file (detailed)</string>
+   </property>
+  </action>
+  <action name="action_how_to_use">
+   <property name="text">
+    <string>How-to instructions</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>About AISiMoGen</string>
    </property>
   </action>
  </widget>

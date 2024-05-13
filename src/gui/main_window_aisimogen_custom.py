@@ -1,9 +1,27 @@
 # -*- coding: utf-8 -*-
 
 """
+AI Simscape Model Generator - Generating MATLAB Simscape Models using Large Language Models.
+Copyright (C) 2024  Patrick Hummel
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------------------
+
 Main Window of the AI Simscape Model Generation tool.
 
-Last modification: 04.04.2024
+Last modification: 13.05.2024
 """
 
 __version__ = "1"
@@ -15,13 +33,15 @@ import threading
 import locale
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable
 
 import networkx as nx
+from PyQt5.QtGui import QIcon
 from shapely import LineString
 from shapely.geometry import Point
 
-from PyQt5.QtWidgets import QTreeWidgetItem, QGroupBox, QMessageBox, QScrollArea, QVBoxLayout, QCheckBox
+from PyQt5.QtWidgets import QTreeWidgetItem, QGroupBox, QMessageBox, QVBoxLayout, QCheckBox
 from PyQt5.QtWidgets import QWidget, QHBoxLayout
 from PyQt5 import QtCore
 
@@ -30,25 +50,30 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-from config.gobal_constants import PATH_EXAMPLE_USER_SPECIFICATION, \
-    OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K, OPENAI_GPT35_TURBO_OUTPUT_TOKENS_COST_USD_PER_1K
+from config.gobal_constants import PATH_EXAMPLE_USER_SPECIFICATION
 from src.abstract_model.abstract_components import AbstractComponent
 
 from src.abstract_model.abstract_system import AbstractSystem
+from src.api_client import token_cost_calculation
+from src.gui.about_dialog_aisimogen_custom import AboutDialog
+from src.gui.help_dialog_aisimogen_custom import HelpDialog
 from src.language_model_enum import LLModel
 
 from src.gui.percentage_worker import PercentageWorker
 from src.gui.main_window_aisimogen_generated import Ui_MainWindow
+
 from src.model.components import ComponentBlock
+from src.model.response import ResponseData
+from src.model.system import System, Subsystem, Connection
 from src.model_upgrader import BasicUpgrader, SingleUpgrader, CombineUpgrader, SINGLE_UPGRADER_COMPARATOR_PATTERN, \
     SINGLE_UPGRADER_VOTER_PATTERN, COMBINED_UPGRADER_C_AND_V_PATTERN, COMBINED_UPGRADER_V_AND_C_PATTERN, \
     COMBINED_UPGRADER_C_AND_S_PATTERN, COMBINED_UPGRADER_V_AND_C_AND_S_PATTERN
-from src.model.response import ResponseData
-from src.model.system import System, Subsystem, Connection
+
 from src.prompt_generator import PromptGenerator
 from src.response_interpreter import ResponseInterpreter
 from src.simscape.interface import Implementer, SystemSimulinkAdapter
 from src.system_builder import SystemBuilder
+
 from src.tools.custom_errors import JSONSchemaError, AbstractComponentError, AbstractConnectionError
 from src.tools.format_time import seconds_to_string
 from src.tools.state_machine import StateMachine, State
@@ -134,6 +159,8 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
     def setupUi(self, MainWindow):
         super().setupUi(MainWindow)
 
+        MainWindow.setWindowIcon(QIcon(str(Path(__file__).parent / 'aisimogen_icon_64x64_v2.png')))
+
         model_name_list = []
         start_model = self.current_model
         start_model_index = 0
@@ -175,6 +202,8 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.action_undo_change_to_abstract_model.setEnabled(False)
         self.action_undo_change_to_detailed_model.setEnabled(False)
+        self.action_about.triggered.connect(self.show_about_dialog)
+        self.action_how_to_use.triggered.connect(self.show_help_dialog)
 
         self.comboBox_single_upgrader_pattern.addItems([SINGLE_UPGRADER_COMPARATOR_PATTERN, SINGLE_UPGRADER_VOTER_PATTERN])
         self.comboBox_combined_upgrader_pattern.addItems([COMBINED_UPGRADER_C_AND_V_PATTERN,
@@ -213,6 +242,9 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         # Temporary for debugging
         self.label_info_current_state.setText(self.state_machine.current_state.name)
+
+        self.tabWidget_main.tabBar().setTabEnabled(1, False)
+        self.tabWidget_main.tabBar().setTabEnabled(2, False)
 
         # --- Build abstract component selection dynamically ---
         # Create a widget to contain the checkboxes
@@ -273,16 +305,51 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.prompt_generator.create_system_modeling_instructions(self.selected_abstract_component_types_dict)
 
-    def show_error_dialog(self, title: str, text: str, informative_text: str):
+    def show_error_dialog(self, title: str, text: str, informative_text: str) -> bool:
 
         # Create and show the error dialog
         error_dialog = QMessageBox()
         error_dialog.setIcon(QMessageBox.Critical)
         error_dialog.setWindowTitle(title)
+        error_dialog.setWindowIcon(QIcon(str(Path(__file__).parent / 'aisimogen_icon_64x64_v2.png')))
         error_dialog.setText(text)
         error_dialog.setInformativeText(informative_text)
         error_dialog.setStandardButtons(QMessageBox.Retry | QMessageBox.Cancel)
-        error_dialog.exec_()
+        response = error_dialog.exec_()
+
+        if response == QMessageBox.Retry:
+            return True
+        elif response == QMessageBox.Cancel:
+            return False
+        else:
+            return False
+
+    def show_success_dialog(self, title: str, text: str, informative_text: str) -> bool:
+
+        # Create and show the error dialog
+        success_dialog = QMessageBox()
+        success_dialog.setIcon(QMessageBox.Information)
+        success_dialog.setWindowTitle(title)
+        success_dialog.setWindowIcon(QIcon(str(Path(__file__).parent / 'aisimogen_icon_64x64_v2.png')))
+        success_dialog.setText(text)
+        success_dialog.setInformativeText(informative_text)
+        success_dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        response = success_dialog.exec_()
+
+        if response == QMessageBox.Yes:
+            return True
+        elif response == QMessageBox.No:
+            return False
+        else:
+            return False
+
+    def show_about_dialog(self):
+        about_dialog = AboutDialog()
+        about_dialog.exec_()
+
+    def show_help_dialog(self):
+        about_dialog = HelpDialog()
+        about_dialog.exec_()
 
     def _update_gui_on_prompt_response(self, prompt: str, response: ResponseData, prompt_title: str, response_title: str):
 
@@ -290,21 +357,18 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         self._update_prompt_history(PROMPT_HIST_TYPE_RESPONSE, response_title, response.response_str)
 
         self.label_last_response_time.setText(seconds_to_string(response.time_seconds))
-        self._update_total_tokens(response.input_tokens, response.output_tokens)
 
-    def _update_total_tokens(self, input_tokens: int, output_tokens: int):
-
-        self.total_input_tokens += input_tokens
-        self.total_output_tokens += output_tokens
-        self.total_tokens_used = self.total_input_tokens + self.total_output_tokens
-
+        # Calculate total token count of response and add it to overall total of generation process
+        self.total_tokens_used += (response.input_tokens + response.output_tokens)
         self.label_total_tokens.setText(f"{self.total_tokens_used}")
 
-        input_token_price_usd = (self.total_input_tokens / 1000) * OPENAI_GPT35_TURBO_INPUT_TOKENS_COST_USD_PER_1K
-        output_token_price_usd = (self.total_output_tokens / 1000) * OPENAI_GPT35_TURBO_OUTPUT_TOKENS_COST_USD_PER_1K
-        self.total_token_cost_usd = input_token_price_usd + output_token_price_usd
+        # Calculate total token cost of response and add it to overall cost of generation process
+        input_cost, output_cost = token_cost_calculation(input_tokens=response.input_tokens,
+                                                         output_tokens=response.output_tokens,
+                                                         model_name=response.model_name)
 
-        self.label_total_cost_euro.setText(f"{input_token_price_usd:.4f}")
+        self.total_token_cost_usd += (input_cost + output_cost)
+        self.label_total_cost_euro.setText(f"{self.total_token_cost_usd:.5f}")
 
     def _update_prompt_history(self, msg_type: str, title: str, text: str):
 
@@ -328,8 +392,11 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         raise NotImplementedError("Save to file not yet implemented for abstract model.")
 
     def on_action_save_to_file_detailed_model(self):
-        self.detailed_system_model.save_as_json()
-        print("Detailed model was saved as JSON.")
+        if self.detailed_system_model is not None and len(self.detailed_system_model) > 0:
+            self.detailed_system_model.save_as_json()
+            print("Detailed model was saved as JSON.")
+        else:
+            print("You need to generate a detailed system model before you can save it to disk.")
 
     def on_click_add_detailed_model_component(self):
 
@@ -477,12 +544,10 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
                 self.treeWidget_json_response.clear()
                 add_items_to_tree_json_response(self.treeWidget_json_response.invisibleRootItem(), json_data)
-                self.treeWidget_json_response.expandAll()
 
                 self.treeWidget_abstract_model.clear()
                 add_items_to_tree_abstract_system_model(self.treeWidget_abstract_model.invisibleRootItem(),
                                                         self.abstract_system_model)
-                self.treeWidget_abstract_model.expandAll()
 
                 success = True
 
@@ -497,7 +562,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
                 print(f"Error interpreting response: {jse}")
 
                 worker.percentage = 90
-                worker.text = "JSON Schema invalid"
+                worker.text = "JSON schema invalid"
                 return
 
             except AbstractComponentError as acompe:
@@ -540,9 +605,14 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
                 counter += 1
 
-        worker.percentage = 100
-        worker.text = "Abstract system model created."
-        worker.finish()
+        if success:
+            worker.percentage = 100
+            worker.text = "Abstract system model created."
+        else:
+            worker.percentage = 0
+            worker.text = "Interpretation error..."
+
+        worker.finish(success)
 
     def on_click_create_abstract_system_model(self):
 
@@ -580,10 +650,25 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
 
         self.interpret_abstract_model_json_response(worker)
 
-    def on_update_abstract_system_model_created(self):
+    def on_update_abstract_system_model_created(self, success: bool):
+
+        if not success:
+            self.state_machine.set_state(State.INTERPRETATION_ERROR)
+            return
 
         self.create_abstract_system_network_graph_plot()
         self.plainTextEdit_ai_abstract_system_model.setPlainText(self.last_response_str)
+
+        # Expand only the first level
+        for i in range(self.treeWidget_json_response.topLevelItemCount()):
+            item = self.treeWidget_json_response.topLevelItem(i)
+            item.setExpanded(True)
+
+        # Expand only the first level
+        for i in range(self.treeWidget_abstract_model.topLevelItemCount()):
+            item = self.treeWidget_abstract_model.topLevelItem(i)
+            item.setExpanded(True)
+
         self.tabWidget_main.setCurrentIndex(1)
 
         # State machine transition
@@ -669,7 +754,7 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         # 4) Build detailed system
         builder = SystemBuilder(self.abstract_system_model)
         self.previous_detailed_system_model = copy.deepcopy(self.detailed_system_model)
-        self.detailed_system_model = builder.build("Example")
+        self.detailed_system_model = builder.build("AISiMoGen")
 
         worker.percentage = 100
         worker.text = "Created detailed model."
@@ -753,6 +838,14 @@ class Ui_MainWindow_Custom(Ui_MainWindow):
         for i in range(self.treeWidget_detailed_model.topLevelItemCount()):
             item = self.treeWidget_detailed_model.topLevelItem(i)
             item.setExpanded(True)
+
+        if (len(self.detailed_system_model.subsystem_list) > 0) and (self.primary_selection_subsystem is None):
+            subsys = self.detailed_system_model.subsystem_list[0]
+            self.detailed_model_primary_selection = subsys.unique_name
+            self.primary_selection_subsystem = subsys
+            self.current_displayed_subsystem = subsys
+            self.create_selected_subsystem_network_graph_plot()
+            self.label_detailed_model_upgrade_selected_subsystem.setText(self.detailed_model_primary_selection)
 
         self.tabWidget_main.setCurrentIndex(2)
 

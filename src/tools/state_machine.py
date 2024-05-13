@@ -1,9 +1,27 @@
 # -*- coding: utf-8 -*-
 
 """
-State machine
+AI Simscape Model Generator - Generating MATLAB Simscape Models using Large Language Models.
+Copyright (C) 2024  Patrick Hummel
 
-Last modification: 04.04.2024
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------------------
+
+State machine representing the MATLAB Simscape model generation process.
+
+Last modification: 13.05.2024
 """
 
 __version__ = "1"
@@ -49,7 +67,7 @@ class StateMachine:
 
         elif self.current_state == State.SPECIFICATION_SUMMARIZED:
 
-            if new_state == State.AWAITING_SPECIFICATION:
+            if new_state == State.SPECIFICATION_SUMMARIZED:
                 valid_transition = True
             elif new_state == State.ABSTRACT_SYSTEM_MODEL_GENERATED:
                 valid_transition = True
@@ -114,10 +132,17 @@ class StateMachine:
             pass
 
         elif self.current_state == State.ABSTRACT_SYSTEM_MODEL_GENERATED:
-            pass
+            self.window.pushButton_abstract_model_manual_auto_correction.setEnabled(False)
+            self.window.pushButton_clear_abstract_model_feedback_text.setEnabled(False)
+            self.window.pushButton_abstract_model_send_feedback.setEnabled(False)
+            self.window.pushButton_create_detailed_model.setEnabled(False)
+            self.window.plainTextEdit_abstract_model_feedback.setEnabled(False)
 
         elif self.current_state == State.DETAILED_SYSTEM_MODEL_GENERATED:
-            pass
+            self.window.pushButton_detailed_model_add_component.setEnabled(False)
+            self.window.pushButton_detailed_model_add_subsystem.setEnabled(False)
+            self.window.pushButton_detailed_model_add_connection.setEnabled(False)
+            self.window.pushButton_build_simscape_model.setEnabled(False)
 
         elif self.current_state == State.SIMSCAPE_MODEL_GENERATED:
             pass
@@ -133,6 +158,11 @@ class StateMachine:
 
         # Entry activities
         if new_state == State.AWAITING_SPECIFICATION:
+            self.window.tabWidget_main.tabBar().setTabEnabled(1, False)
+            self.window.tabWidget_main.tabBar().setTabEnabled(2, False)
+            self.window.plainTextEdit_user_specification.clear()
+            self.window.plainTextEdit_specification_summary.clear()
+            self.window.plainTextEdit_user_specification.setEnabled(True)
             self.window.pushButton_create_specification_summary.setEnabled(True)
 
         elif new_state == State.SPECIFICATION_SUMMARIZED:
@@ -140,6 +170,12 @@ class StateMachine:
             self.window.plainTextEdit_specification_summary.setEnabled(True)
 
         elif new_state == State.ABSTRACT_SYSTEM_MODEL_GENERATED:
+            self.window.pushButton_create_specification_summary.setEnabled(False)
+            self.window.pushButton_verify_specification_summary.setEnabled(False)
+            self.window.plainTextEdit_specification_summary.setEnabled(False)
+            self.window.plainTextEdit_user_specification.setEnabled(False)
+
+            self.window.tabWidget_main.tabBar().setTabEnabled(1, True)
             self.window.pushButton_abstract_model_manual_auto_correction.setEnabled(True)
             self.window.pushButton_clear_abstract_model_feedback_text.setEnabled(True)
             self.window.pushButton_abstract_model_send_feedback.setEnabled(True)
@@ -147,13 +183,32 @@ class StateMachine:
             self.window.plainTextEdit_abstract_model_feedback.setEnabled(True)
 
         elif new_state == State.DETAILED_SYSTEM_MODEL_GENERATED:
+            self.window.tabWidget_main.tabBar().setTabEnabled(2, True)
             self.window.pushButton_detailed_model_add_component.setEnabled(True)
             self.window.pushButton_detailed_model_add_subsystem.setEnabled(True)
             self.window.pushButton_detailed_model_add_connection.setEnabled(True)
             self.window.pushButton_build_simscape_model.setEnabled(True)
 
         elif new_state == State.SIMSCAPE_MODEL_GENERATED:
-            pass
+
+            # Show error window
+            begin_new_bool = self.window.show_success_dialog(title="Successful generation", text="MATLAB Simscape model was successfully created.",
+                                          informative_text=f"The detailed system model was successfully converted into a MATLAB Simscape model. "
+                                                           f"Would you like to begin creating a new system model?")
+
+            if begin_new_bool:
+                new_state = State.AWAITING_SPECIFICATION
+                self.window.tabWidget_main.tabBar().setTabEnabled(1, False)
+                self.window.tabWidget_main.tabBar().setTabEnabled(2, False)
+                self.window.plainTextEdit_user_specification.clear()
+                self.window.plainTextEdit_specification_summary.clear()
+                self.window.plainTextEdit_user_specification.setEnabled(True)
+                self.window.pushButton_create_specification_summary.setEnabled(True)
+                self.window.tabWidget_main.setCurrentIndex(0)
+
+            else:
+                new_state = State.DETAILED_SYSTEM_MODEL_GENERATED
+                self.window.pushButton_build_simscape_model.setEnabled(True)
 
         elif new_state == State.API_ERROR:
 
@@ -167,16 +222,34 @@ class StateMachine:
                 specific_text = "Unable to improve abstract system model based on feedback."
 
             # Show error window
-            self.window.show_error_dialog(title="API Error", text="An error occurred while trying to access the API.",
+            retry_bool = self.window.show_error_dialog(title="API Error", text="An error occurred while trying to access the API.",
                                           informative_text=f"The selected large language model could not be prompted."
-                                                         f" {specific_text} Would you like to try again?")
+                                                           f" {specific_text} Would you like to try again?")
+
+            # Set to previous state after allowing the user to choose how to proceed
+            new_state = self.current_state
+
+            if retry_bool:
+                if new_state == State.AWAITING_SPECIFICATION:
+                    self.window.pushButton_create_specification_summary.click()
+                elif new_state == State.SPECIFICATION_SUMMARIZED:
+                    self.window.pushButton_verify_specification_summary.click()
+                elif new_state == State.ABSTRACT_SYSTEM_MODEL_GENERATED:
+                    self.window.pushButton_abstract_model_send_feedback.click()
 
         elif new_state == State.INTERPRETATION_ERROR:
 
             # Show error window
-            self.window.show_error_dialog(title="Interpretation Error", text="An error occurred while trying to interpret the response.",
+            retry_bool = self.window.show_error_dialog(title="Interpretation Error", text="An error occurred while trying to interpret the response.",
                                           informative_text=f"The response of the large language model could not be interpreted as an abstract system model. "
-                                                         f"Would you like to try again?")
+                                                           f"Would you like to try again?")
+
+            # Set to previous state after allowing the user to choose how to proceed
+            new_state = self.current_state
+
+            if retry_bool:
+                self.window.pushButton_verify_specification_summary.click()
+
         elif new_state == State.EXIT:
 
             QCoreApplication.quit()

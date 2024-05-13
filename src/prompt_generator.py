@@ -1,6 +1,24 @@
 # -*- coding: utf-8 -*-
 
 """
+AI Simscape Model Generator - Generating MATLAB Simscape Models using Large Language Models.
+Copyright (C) 2024  Patrick Hummel
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------------------
+
 Prompt Generator
 
 Last modification: 04.04.2024
@@ -39,6 +57,7 @@ JSON_RESPONSE_INSTRUCTIONS = ("Only respond with a single JSON object that conta
                               "ports. Each connection consists of the attributes 'from' and 'to' which "
                               "have port ID as values. Each port needs to be part of a connection. Response "
                               "must only in JSON, no additional text.")
+
 
 class PromptGenerator:
 
@@ -163,7 +182,7 @@ class PromptGenerator:
                         f"one or more power sources. Make sure all components are connected to form a complete and "
                         f"uninterrupted electrical circuit with at least one power source in the path. Electricity must "
                         f"be able to flow along the connections from the power source across components and back to the "
-                        f"power source."
+                        f"power source. "
                         f"{self.system_modeling_instructions} "
                         f"{JSON_RESPONSE_INSTRUCTIONS}")
 
@@ -229,7 +248,7 @@ class PromptGenerator:
 
         if isinstance(error, AbstractComponentError):
             auto_correct_instruction = (f"There is a problem with a component. "
-                                        f"Correct the model based on this error message: {error.message}. "
+                                        f"Correct the model based on this error message: {error.message} "
                                         f"Problem with the following components: {str(error.list_wrong_components)}. "
                                         f"{self.system_modeling_instructions} "
                                         f"Make sure that every component name excluding the '_' and number is in the "
@@ -255,7 +274,7 @@ class PromptGenerator:
         final_prompt = (f"{GENERAL_PROMPT_PREFACE} You design electrical circuits based on a provided specification. "
                         f"The following JSON contains a model of a system with its components and connections: "
                         f"{abstract_system_model_json} "
-                        f"Improve this model and the json using the following instructions: "
+                        f"Improve this model and the JSON using the following instructions: "
                         f"{auto_correct_instruction} Only return a single JSON object, not other text.")
 
         if self.offline_mode:

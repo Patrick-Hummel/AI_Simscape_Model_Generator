@@ -19,22 +19,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 --------------------------------------------------------------------------------------------
 
-A class representing a response from a large language model.
+Help Dialog Window
 
-Last modification: 01.02.2024
+Last modification: 13.05.2024
 """
 
 __version__ = "1"
 __author__ = "Patrick Hummel"
 
-from dataclasses import dataclass
+from pathlib import Path
+
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QDialog
+
+from src.gui import help_dialog_aisimogen_generated
 
 
-@dataclass
-class ResponseData:
+class HelpDialog(QDialog):
+    def __init__(self):
+        super().__init__()
 
-    response_str: str = ""
-    input_tokens: int = 0
-    output_tokens: int = 0
-    time_seconds: float = 0.0
-    model_name: str = ""
+        # Set up the user interface from Designer
+        self.ui = help_dialog_aisimogen_generated.Ui_HelpDialog()
+        self.ui.setupUi(self)
+
+        self.setWindowIcon(QIcon(str(Path(__file__).parent / 'aisimogen_icon_64x64_v2.png')))
